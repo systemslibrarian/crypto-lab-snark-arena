@@ -49,6 +49,7 @@
           <p>A circuit is an arithmetic constraint system over a finite field. Example for x^3 + x + 5 = 35:</p>
           <p>v1 = x * x, v2 = v1 * x, v2 + x + 5 = 35.</p>
           <p>Groth16 is per-circuit setup with smallest proofs and fastest verification. PLONK is universal setup with more circuit flexibility.</p>
+          <p>For foundational Schnorr, Fiat-Shamir, and commitment mechanics, see <a href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab</a>.</p>
         </div>
         <div class="vl">
           <strong>Why this matters:</strong> zk-SNARKs underpin Zcash private transfers, zkEVM rollups, zkLogin, Semaphore identity proofs, and anonymous credential systems.
@@ -186,6 +187,7 @@
             </div>
           </div>
         </div>
+        <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> byte strings are generated for visualization, with size and timing ranges aligned to snarkjs benchmark conventions.</div>
         <div class="table-wrap panel">
           <div class="ph">Comparison Table</div>
           <div class="pb">
@@ -227,6 +229,7 @@
           <p>Toxic waste is setup randomness. If retained, forged proofs for false statements become possible and soundness collapses.</p>
           <p>Verification keys cannot detect forgeries made by a party holding toxic waste. This is a catastrophic failure mode.</p>
           <p>MPC ceremonies chain contributions from many participants; security holds if at least one honest participant deletes their randomness.</p>
+          <p>Groth16 compromise is circuit-scoped to the affected phase-2 setup, while universal setup compromise can affect all circuits using that SRS.</p>
         </div>
         <div class="panel">
           <div class="ph">5-Participant Ceremony Simulation</div>
