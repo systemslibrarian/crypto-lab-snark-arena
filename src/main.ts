@@ -101,8 +101,12 @@ function animateChain(
   nodes: HTMLDivElement[],
   statuses: Array<'safe' | 'bad'>,
   labels: string[],
+  buttons: HTMLElement[],
   onDone: () => void,
 ) {
+  buttons.forEach((b) => {
+    if (b instanceof HTMLButtonElement) b.disabled = true;
+  });
   nodes.forEach((n, i) => {
     n.className = 'chain-node';
     n.textContent = `P${i + 1}`;
@@ -116,7 +120,12 @@ function animateChain(
         n.className = `chain-node ${statuses[idx]}`;
         n.textContent = labels[idx];
         n.setAttribute('aria-label', `Participant ${idx + 1}: ${labels[idx]}`);
-        if (idx === nodes.length - 1) onDone();
+        if (idx === nodes.length - 1) {
+          buttons.forEach((b) => {
+            if (b instanceof HTMLButtonElement) b.disabled = false;
+          });
+          onDone();
+        }
       }, 250);
     }, idx * 500);
   });
@@ -131,7 +140,8 @@ function bindCeremonyVisualizers() {
     const statuses: Array<'safe' | 'bad'> = grothNodes.map((_, i) => (i < 4 ? 'safe' : 'bad'));
     const labels = grothNodes.map((_, i) => (i < 4 ? `P${i + 1} ✓ deleted waste` : `P${i + 1} kept waste`));
     if (grothStatus) grothStatus.textContent = 'Running ceremony…';
-    animateChain(grothNodes, statuses, labels, () => {
+    const btns = [grothRun].filter(Boolean) as HTMLElement[];
+    animateChain(grothNodes, statuses, labels, btns, () => {
       if (grothStatus) grothStatus.textContent = 'Secure: at least one honest participant destroyed toxic waste. Ceremony is safe.';
     });
   });
@@ -141,11 +151,13 @@ function bindCeremonyVisualizers() {
   const setupBreak = document.getElementById('setup-break');
   const setupResult = document.getElementById('setup-result');
 
+  const setupBtns = [setupRun, setupBreak].filter(Boolean) as HTMLElement[];
+
   setupRun?.addEventListener('click', () => {
     const statuses: Array<'safe' | 'bad'> = setupNodes.map((_, i) => (i === 1 ? 'bad' : 'safe'));
     const labels = setupNodes.map((_, i) => (i === 1 ? `P${i + 1} ✗ cheating` : `P${i + 1} ✓ honest`));
     if (setupResult) setupResult.textContent = 'Running ceremony…';
-    animateChain(setupNodes, statuses, labels, () => {
+    animateChain(setupNodes, statuses, labels, setupBtns, () => {
       if (setupResult) setupResult.textContent = 'Result: ceremony remains secure — the cheater cannot extract honest participants\' randomness from the final SRS.';
     });
   });
@@ -154,7 +166,7 @@ function bindCeremonyVisualizers() {
     const statuses: Array<'safe' | 'bad'> = setupNodes.map(() => 'bad');
     const labels = setupNodes.map((_, i) => `P${i + 1} ✗ retained waste`);
     if (setupResult) setupResult.textContent = 'Running ceremony…';
-    animateChain(setupNodes, statuses, labels, () => {
+    animateChain(setupNodes, statuses, labels, setupBtns, () => {
       if (setupResult) setupResult.textContent = 'Result: catastrophic compromise — all participants retained toxic waste. Soundness is broken; fake proofs can be created.';
     });
   });
