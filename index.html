@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Groth16 vs PLONK: trusted setup vs universal setup in a browser-native zk-SNARK lab." />
+  <title>SNARK Arena</title>
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme');
+      document.documentElement.setAttribute('data-theme', saved ?? 'dark');
+    })();
+  </script>
+  <script type="module" crossorigin src="/crypto-lab-snark-arena/assets/index-BtHOrONU.js"></script>
+  <link rel="stylesheet" crossorigin href="/crypto-lab-snark-arena/assets/index-BjN-5ckW.css">
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <div>
+        <div class="brand-kicker">Crypto-Lab System Gallery</div>
+        <h1 class="brand-title">SNARK Arena</h1>
+        <p class="brand-sub">The definitive browser demo of Groth16 vs PLONK, trusted setup vs universal setup.</p>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero-panel">
+        <p class="hero-lead">ZK Proof Lab introduces Schnorr and Fiat-Shamir. SNARK Arena goes deeper into the two systems that power production zero-knowledge systems.</p>
+        <p class="hero-note">Groth16 (Groth 2016) and PLONK (Gabizon, Williamson, Ciobotaru 2019) are shown side by side with setup assumptions, proof sizes, and verification behavior.</p>
+        <div class="hero-actions">
+          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab Fundamentals</a>
+          <a class="resource-link" href="https://eprint.iacr.org/2016/260" target="_blank" rel="noopener noreferrer">Groth16 Paper</a>
+          <a class="resource-link" href="https://eprint.iacr.org/2019/953" target="_blank" rel="noopener noreferrer">PLONK Paper</a>
+        </div>
+      </section>
+
+      <section class="exhibit" id="exhibit-1">
+        <div class="ex-row"><span class="ex-num">EXHIBIT 01</span><span class="badge badge-real">Definition and Properties</span></div>
+        <h2 class="ex-title">What is a zk-SNARK?</h2>
+        <div class="prose">
+          <p><strong>SNARK</strong> means Succinct Non-interactive ARgument of Knowledge.</p>
+          <p><strong>Succinct:</strong> proof is small (often hundreds of bytes) regardless of computation size.</p>
+          <p><strong>Non-interactive:</strong> prover sends one message; no back-and-forth transcript.</p>
+          <p><strong>Argument of Knowledge:</strong> verifier is convinced prover knows a witness satisfying the circuit.</p>
+          <p><strong>Completeness:</strong> honest prover with valid witness is accepted.</p>
+          <p><strong>Soundness:</strong> cheating prover without witness is rejected except negligible probability.</p>
+          <p><strong>Zero-knowledge:</strong> proof reveals nothing about the witness beyond validity.</p>
+          <p>A circuit is an arithmetic constraint system over a finite field. Example for x^3 + x + 5 = 35:</p>
+          <p>v1 = x * x, v2 = v1 * x, v2 + x + 5 = 35.</p>
+          <p>Groth16 is per-circuit setup with smallest proofs and fastest verification. PLONK is universal setup with more circuit flexibility.</p>
+        </div>
+        <div class="vl">
+          <strong>Why this matters:</strong> zk-SNARKs underpin Zcash private transfers, zkEVM rollups, zkLogin, Semaphore identity proofs, and anonymous credential systems.
+        </div>
+      </section>
+
+      <section class="exhibit" id="exhibit-2">
+        <div class="ex-row"><span class="ex-num">EXHIBIT 02</span><span class="badge badge-real">Groth16 Per-Circuit Setup</span></div>
+        <h2 class="ex-title">Groth16: Per-Circuit Trusted Setup</h2>
+        <div class="prose">
+          <p>Groth16 is a pairing-based SNARK over curves like BN254 and BLS12-381 using QAP-style encodings (Groth, EUROCRYPT 2016).</p>
+          <p>Setup has Powers of Tau plus a circuit-specific phase 2 that emits proving key and verification key.</p>
+          <p>Proof has three group elements (A, B, C). On BN254 this is 128 bytes; on BLS12-381 this is 192 bytes.</p>
+        </div>
+        <div class="demo-grid">
+          <div class="panel">
+            <div class="ph">Workflow</div>
+            <div class="pb">
+              <div class="workflow">Circuit definition</div>
+              <div class="workflow">Powers of Tau (universal)</div>
+              <div class="workflow">Phase 2 (circuit-specific)</div>
+              <div class="workflow">proving key + verification key</div>
+              <div class="workflow">prove -> verify</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph">Sample Parameters: x^2 = 9</div>
+            <div class="pb">
+              <p>Constraint count: 2</p>
+              <p>Proving key size: 42 KB (simulated educational profile)</p>
+              <p>Verification key size: 1.6 KB (simulated educational profile)</p>
+              <p>Proof size: <strong>128 bytes (BN254)</strong></p>
+              <p>Proof bytes (hex, truncated): <span id="groth16-proof-hex" class="hash-box"></span></p>
+              <p>Verification time: <span id="groth16-time">1.4 ms</span></p>
+              <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> Parameters from snarkjs benchmark data.</div>
+              <div class="controls">
+                <button class="bp" id="groth16-verify">Verify proof</button>
+              </div>
+              <div id="groth16-result" class="hash-label">Awaiting verification...</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph">Trusted Setup Ceremony Visualizer</div>
+          <div class="pb">
+            <div class="ceremony-chain" id="groth16-chain"></div>
+            <div class="controls">
+              <button class="bs" id="groth16-chain-run">Run ceremony simulation</button>
+            </div>
+            <p id="groth16-chain-status" class="hint">Security holds if at least one participant destroys toxic waste.</p>
+            <p class="hint">Examples: Zcash Sapling (88 participants, 2018), Hermez (2021), Semaphore ceremonies.</p>
+          </div>
+        </div>
+        <div class="vl">
+          <strong>Why this matters:</strong> Groth16's tiny proofs and fast verification are ideal when every byte and millisecond matters, but each circuit needs its own phase-2 ceremony.
+        </div>
+      </section>
+
+      <section class="exhibit" id="exhibit-3">
+        <div class="ex-row"><span class="ex-num">EXHIBIT 03</span><span class="badge badge-real">PLONK Universal Setup</span></div>
+        <h2 class="ex-title">PLONK: Universal Trusted Setup</h2>
+        <div class="prose">
+          <p>PLONK uses polynomial commitments and a permutation argument in Lagrange form (ePrint 2019/953).</p>
+          <p>One universal setup (Powers of Tau) can support many circuits up to a maximum size.</p>
+          <p>Proofs are larger than Groth16 (typically around 400-500 bytes) with still-fast verification.</p>
+        </div>
+        <div class="demo-grid">
+          <div class="panel">
+            <div class="ph">Workflow</div>
+            <div class="pb">
+              <div class="workflow">Powers of Tau (once)</div>
+              <div class="workflow">Any circuit under SRS bound</div>
+              <div class="workflow">prove -> verify</div>
+              <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> Parameters from snarkjs benchmark data.</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph">Sample Parameters: x^2 = 9</div>
+            <div class="pb">
+              <p>Proof size: <strong>448 bytes</strong></p>
+              <p>Proof bytes (hex, truncated): <span id="plonk-proof-hex" class="hash-box"></span></p>
+              <p>Verification time: <span id="plonk-time">3.8 ms</span></p>
+              <div class="controls">
+                <button class="bp" id="plonk-verify">Verify proof</button>
+              </div>
+              <div id="plonk-result" class="hash-label">Awaiting verification...</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph">Universal Setup Visualizer</div>
+          <div class="pb">
+            <div class="srs-grid">
+              <div class="srs-card">Circuit A -> same universal SRS</div>
+              <div class="srs-card">Circuit B -> same universal SRS</div>
+              <div class="srs-card">Circuit C -> same universal SRS</div>
+            </div>
+            <p class="hint">SRS examples: 2^14 constraints about 256 MB, 2^21 constraints about 2 GB.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph">PLONK Variants</div>
+          <div class="pb">
+            <p>PLONK (original): KZG commitments.</p>
+            <p>TurboPlonk: custom gates (Aztec).</p>
+            <p>UltraPlonk: lookups and richer gate systems.</p>
+            <p>Halo2: no trusted setup via IPA commitments, used in Zcash Orchard and Scroll proving systems.</p>
+          </div>
+        </div>
+        <div class="vl">
+          <strong>Why this matters:</strong> universal setup lowers deployment friction by removing per-circuit ceremonies for new applications.
+        </div>
+      </section>
+
+      <section class="exhibit" id="exhibit-4">
+        <div class="ex-row"><span class="ex-num">EXHIBIT 04</span><span class="badge badge-real">Head-to-Head</span></div>
+        <h2 class="ex-title">Groth16 vs PLONK on the Same Circuit</h2>
+        <div class="demo-grid">
+          <div class="panel">
+            <div class="ph">Groth16: x^2 = y</div>
+            <div class="pb">
+              <p>Proof bytes: <span id="head-groth16" class="hash-box"></span></p>
+              <p>Proof size: 128 bytes (BN254)</p>
+              <p>Verification time: 1.5 ms</p>
+              <p>Setup type: per-circuit</p>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph">PLONK: x^2 = y</div>
+            <div class="pb">
+              <p>Proof bytes: <span id="head-plonk" class="hash-box"></span></p>
+              <p>Proof size: 448 bytes</p>
+              <p>Verification time: 3.9 ms</p>
+              <p>Setup type: universal</p>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrap panel">
+          <div class="ph">Comparison Table</div>
+          <div class="pb">
+            <table class="commit-table">
+              <thead>
+                <tr><th>Property</th><th>Groth16</th><th>PLONK</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Setup type</td><td>Per-circuit</td><td>Universal (once)</td></tr>
+                <tr><td>Proof size</td><td>128 bytes (BN254)</td><td>~400-500 bytes</td></tr>
+                <tr><td>Verification time</td><td>~1-2ms</td><td>~3-5ms</td></tr>
+                <tr><td>Proving time</td><td>Fast</td><td>Slightly slower</td></tr>
+                <tr><td>Circuit language</td><td>R1CS / circom</td><td>PLONKish / Halo2</td></tr>
+                <tr><td>Trusted setup risk</td><td>Circuit-specific</td><td>Universal SRS</td></tr>
+                <tr><td>Recursive SNARKs</td><td>Complex</td><td>Native in Halo2 variants</td></tr>
+                <tr><td>Post-quantum safe</td><td>No (pairing-based)</td><td>No (pairing-based)</td></tr>
+                <tr><td>Used in</td><td>Zcash, Semaphore</td><td>Aztec, Polygon zkEVM</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph">Decision Tree</div>
+          <div class="pb decision-tree">
+            <p>I need smallest proof for fixed circuit -> <strong>Groth16</strong>.</p>
+            <p>I need circuit flexibility without new ceremonies -> <strong>PLONK</strong>.</p>
+            <p>I need recursive composition -> <strong>Halo2</strong>.</p>
+            <p>I cannot run trusted setup -> <strong>Halo2 or STARKs</strong>.</p>
+            <p>I need post-quantum security -> <strong>STARKs</strong>.</p>
+            <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-stark-tower/" target="_blank" rel="noopener noreferrer">STARK Tower (post-quantum alternative)</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="exhibit" id="exhibit-5">
+        <div class="ex-row"><span class="ex-num">EXHIBIT 05</span><span class="badge badge-real">Trusted Setup Security</span></div>
+        <h2 class="ex-title">Trusted Setup Problem in Depth</h2>
+        <div class="prose">
+          <p>Toxic waste is setup randomness. If retained, forged proofs for false statements become possible and soundness collapses.</p>
+          <p>Verification keys cannot detect forgeries made by a party holding toxic waste. This is a catastrophic failure mode.</p>
+          <p>MPC ceremonies chain contributions from many participants; security holds if at least one honest participant deletes their randomness.</p>
+        </div>
+        <div class="panel">
+          <div class="ph">5-Participant Ceremony Simulation</div>
+          <div class="pb">
+            <div class="ceremony-chain" id="setup-chain"></div>
+            <div class="controls">
+              <button class="bp" id="setup-run">Run with one cheater</button>
+              <button class="bs" id="setup-break">Run all cheating</button>
+            </div>
+            <p id="setup-result" class="hash-label">Press a simulation button.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph">Ceremony Timeline</div>
+          <div class="pb">
+            <p>Zcash Sprout (2016): 6 collocated participants.</p>
+            <p>Zcash Sapling (2018): 88 participants over 6 weeks.</p>
+            <p>Hermez 1.0 (2021): 214 participants.</p>
+            <p>Ethereum KZG Ceremony for EIP-4844 (2023): approximately 141,000 contributors.</p>
+          </div>
+        </div>
+        <div class="vl">
+          <strong>Why this matters:</strong> trusted setup is an operational security cornerstone. If it fails, proof security fails completely.
+        </div>
+      </section>
+
+      <section class="exhibit" id="exhibit-6">
+        <div class="ex-row"><span class="ex-num">EXHIBIT 06</span><span class="badge badge-real">Production Deployments</span></div>
+        <h2 class="ex-title">SNARK Applications in Production</h2>
+        <div class="cards-4">
+          <article class="card">
+            <h3 class="card-title">A. Zcash Shielded Transactions (Groth16)</h3>
+            <p class="card-desc">Sapling proof system for private spends, with compact pairing-based proofs and fast node verification.</p>
+            <p class="hint">Commonly cited sizes: Groth16 proof 192 bytes on BLS12-381 settings.</p>
+          </article>
+          <article class="card">
+            <h3 class="card-title">B. Polygon zkEVM (PLONK/FFLONK)</h3>
+            <p class="card-desc">Rollup correctness proofs for EVM execution, enabling Ethereum L1 verification without full re-execution.</p>
+            <p class="hint">Proof and verification costs depend on proving stack and on-chain verifier implementation.</p>
+          </article>
+          <article class="card">
+            <h3 class="card-title">C. WorldID / Semaphore (Groth16)</h3>
+            <p class="card-desc">Anonymous uniqueness proofs for sybil-resistant participation without identity disclosure.</p>
+          </article>
+          <article class="card">
+            <h3 class="card-title">D. zkLogin (Sui, Groth16)</h3>
+            <p class="card-desc">Client-side proofs binding OAuth identity assertions to blockchain accounts with privacy preservation.</p>
+          </article>
+        </div>
+        <div class="vl">
+          <strong>Why this matters:</strong> SNARKs are deployed infrastructure for privacy, identity, and scaling, not only research artifacts.
+        </div>
+        <div class="hero-actions">
+          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab</a>
+          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-stark-tower/" target="_blank" rel="noopener noreferrer">STARK Tower</a>
+          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-pairing-gate/" target="_blank" rel="noopener noreferrer">Pairing Gate</a>
+          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-compare/" target="_blank" rel="noopener noreferrer">Crypto Compare</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer style="text-align:center; padding: 1.5rem; font-size: 0.85rem; opacity: 0.7; margin-top: 2rem;">
+    Whether you eat or drink or whatever you do, do it all for the glory of God. — 1 Corinthians 10:31
+  </footer>
+
+</body>
+</html>
