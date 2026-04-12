@@ -82,11 +82,15 @@ function buildChain(containerId: string) {
     return [] as HTMLDivElement[];
   }
   container.innerHTML = '';
+  container.setAttribute('role', 'group');
+  container.setAttribute('aria-label', 'Ceremony participants');
   const nodes: HTMLDivElement[] = [];
   for (let i = 0; i < 5; i += 1) {
     const node = document.createElement('div');
     node.className = 'chain-node';
     node.textContent = `P${i + 1}`;
+    node.setAttribute('role', 'img');
+    node.setAttribute('aria-label', `Participant ${i + 1}: waiting`);
     container.appendChild(node);
     nodes.push(node);
   }
@@ -107,9 +111,11 @@ function animateChain(
     setTimeout(() => {
       n.className = `chain-node active`;
       n.textContent = `P${idx + 1} contributing...`;
+      n.setAttribute('aria-label', `Participant ${idx + 1}: contributing`);
       setTimeout(() => {
         n.className = `chain-node ${statuses[idx]}`;
         n.textContent = labels[idx];
+        n.setAttribute('aria-label', `Participant ${idx + 1}: ${labels[idx]}`);
         if (idx === nodes.length - 1) onDone();
       }, 250);
     }, idx * 500);

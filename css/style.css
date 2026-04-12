@@ -1,4 +1,43 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Skip navigation ── */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 1000;
+  background: var(--acc);
+  color: var(--tx);
+  padding: 12px 16px;
+  font-size: 14px;
+  border-radius: 0 0 6px 0;
+  text-decoration: none;
+}
+.skip-link:focus {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* ── Screen-reader only utility ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 :root {
   --bg: #070b12;
   --surf: #0d1422;
@@ -76,6 +115,15 @@ body {
 }
 .theme-toggle:hover { background: var(--elev); color: var(--acc2); border-color: var(--acc); }
 
+/* ── Focus indicators (ADA) ── */
+a:focus-visible,
+button:focus-visible,
+.resource-link:focus-visible,
+.card:focus-visible {
+  outline: 3px solid var(--acc2);
+  outline-offset: 3px;
+}
+
 .brand-kicker { font-size: 11px; color: var(--tx3); letter-spacing: 0.11em; text-transform: uppercase; }
 .brand-title { font-size: 31px; font-family: var(--sans); letter-spacing: -0.02em; font-weight: 650; color: var(--tx); }
 .brand-sub { font-size: 13px; color: var(--tx2); max-width: 840px; }
@@ -131,7 +179,7 @@ body {
   margin: 0 0 8px;
 }
 
-.hash-box { background: var(--bg); border: 1px solid var(--bord); border-radius: 4px; padding: 9px 11px; font-size: 12px; word-break: break-all; margin: 4px 0; display: inline-block; min-width: 240px; }
+.hash-box { background: var(--bg); border: 1px solid var(--bord); border-radius: 4px; padding: 9px 11px; font-size: 12px; word-break: break-all; margin: 4px 0; display: block; max-width: 100%; overflow-wrap: anywhere; }
 .hash-label { font-size: 12px; color: var(--tx2); }
 .hint { font-size: 11px; color: var(--tx2); margin-top: 6px; }
 
@@ -194,10 +242,22 @@ button { font-family: var(--mono); font-size: 12px; padding: 10px 15px; border-r
 .card-title { font-size: 18px; font-family: var(--sans); letter-spacing: -0.01em; margin-bottom: 8px; }
 .card-desc { font-size: 13px; color: var(--tx2); }
 
+/* ── Scripture footer ── */
+.scripture-footer {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.85rem;
+  color: var(--tx2);
+  margin-top: 2rem;
+  border-top: 1px solid var(--bord);
+}
+
 @media (max-width: 860px) {
   .demo-grid { grid-template-columns: 1fr; }
   .cards-4 { grid-template-columns: 1fr; }
   .srs-grid { grid-template-columns: 1fr; }
+  .ceremony-chain { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .commit-table { min-width: 520px; }
 }
 
 @media (max-width: 640px) {
@@ -207,6 +267,17 @@ button { font-family: var(--mono); font-size: 12px; padding: 10px 15px; border-r
   .hero-panel { padding: 16px; }
   .hero-lead { font-size: 20px; }
   .theme-toggle { top: 2px; right: 0; }
+  .ceremony-chain { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .chain-node { padding: 6px 4px; font-size: 10px; }
+  .controls { flex-direction: column; }
+  .controls button { width: 100%; }
+  .hero-actions { flex-direction: column; }
+  .hero-actions .resource-link { width: 100%; text-align: center; }
+  .ex-title { font-size: 22px; }
+  .commit-table { min-width: 440px; font-size: 11px; }
+  .commit-table th, .commit-table td { padding: 5px 6px; }
+  .table-wrap { -webkit-overflow-scrolling: touch; }
+  .scripture-footer { font-size: 0.78rem; padding: 1rem 0.75rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

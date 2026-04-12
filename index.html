@@ -14,8 +14,9 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="site-shell">
-    <header class="site-header">
+    <header class="site-header" role="banner">
       <div>
         <div class="brand-kicker">Crypto-Lab System Gallery</div>
         <h1 class="brand-title">SNARK Arena</h1>
@@ -23,7 +24,7 @@
       </div>
     </header>
 
-    <main class="wrap">
+    <main class="wrap" id="main-content">
       <section class="hero-panel">
         <p class="hero-lead">ZK Proof Lab introduces Schnorr and Fiat-Shamir. SNARK Arena goes deeper into the two systems that power production zero-knowledge systems.</p>
         <p class="hero-note">Groth16 (Groth 2016) and PLONK (Gabizon, Williamson, Ciobotaru 2019) are shown side by side with setup assumptions, proof sizes, and verification behavior.</p>
@@ -34,9 +35,9 @@
         </div>
       </section>
 
-      <section class="exhibit" id="exhibit-1">
+      <section class="exhibit" id="exhibit-1" aria-labelledby="ex1-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 01</span><span class="badge badge-real">Definition and Properties</span></div>
-        <h2 class="ex-title">What is a zk-SNARK?</h2>
+        <h2 class="ex-title" id="ex1-title">What is a zk-SNARK?</h2>
         <div class="prose">
           <p><strong>SNARK</strong> means Succinct Non-interactive ARgument of Knowledge.</p>
           <p><strong>Succinct:</strong> proof is small (often hundreds of bytes) regardless of computation size.</p>
@@ -55,9 +56,9 @@
         </div>
       </section>
 
-      <section class="exhibit" id="exhibit-2">
+      <section class="exhibit" id="exhibit-2" aria-labelledby="ex2-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 02</span><span class="badge badge-real">Groth16 Per-Circuit Setup</span></div>
-        <h2 class="ex-title">Groth16: Per-Circuit Trusted Setup</h2>
+        <h2 class="ex-title" id="ex2-title">Groth16: Per-Circuit Trusted Setup</h2>
         <div class="prose">
           <p>Groth16 is a pairing-based SNARK over curves like BN254 and BLS12-381 using QAP-style encodings (Groth, EUROCRYPT 2016).</p>
           <p>Setup has Powers of Tau plus a circuit-specific phase 2 that emits proving key and verification key.</p>
@@ -87,7 +88,7 @@
               <div class="controls">
                 <button class="bp" id="groth16-verify">Verify proof</button>
               </div>
-              <div id="groth16-result" class="hash-label">Awaiting verification...</div>
+              <div id="groth16-result" class="hash-label" role="status" aria-live="polite">Awaiting verification...</div>
             </div>
           </div>
         </div>
@@ -98,7 +99,7 @@
             <div class="controls">
               <button class="bs" id="groth16-chain-run">Run ceremony simulation</button>
             </div>
-            <p id="groth16-chain-status" class="hint">Security holds if at least one participant destroys toxic waste.</p>
+            <p id="groth16-chain-status" class="hint" role="status" aria-live="polite">Security holds if at least one participant destroys toxic waste.</p>
             <div class="vl" style="margin-top:10px"><strong>One honest participant:</strong> the ceremony is secure if even one participant honestly deletes their randomness. No one can retroactively extract another participant's contribution from the final SRS.</div>
             <p class="hint">Examples: Zcash Sapling (88 participants, 2018), Hermez (214 participants, 2021), Semaphore (open participation, thousands of contributors).</p>
           </div>
@@ -108,9 +109,9 @@
         </div>
       </section>
 
-      <section class="exhibit" id="exhibit-3">
+      <section class="exhibit" id="exhibit-3" aria-labelledby="ex3-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 03</span><span class="badge badge-real">PLONK Universal Setup</span></div>
-        <h2 class="ex-title">PLONK: Universal Trusted Setup</h2>
+        <h2 class="ex-title" id="ex3-title">PLONK: Universal Trusted Setup</h2>
         <div class="prose">
           <p>PLONK uses polynomial commitments and a permutation argument in Lagrange form (ePrint 2019/953).</p>
           <p>One universal setup (Powers of Tau) can support many circuits up to a maximum size.</p>
@@ -135,7 +136,7 @@
               <div class="controls">
                 <button class="bp" id="plonk-verify">Verify proof</button>
               </div>
-              <div id="plonk-result" class="hash-label">Awaiting verification...</div>
+              <div id="plonk-result" class="hash-label" role="status" aria-live="polite">Awaiting verification...</div>
             </div>
           </div>
         </div>
@@ -165,9 +166,9 @@
         </div>
       </section>
 
-      <section class="exhibit" id="exhibit-4">
+      <section class="exhibit" id="exhibit-4" aria-labelledby="ex4-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 04</span><span class="badge badge-real">Head-to-Head</span></div>
-        <h2 class="ex-title">Groth16 vs PLONK on the Same Circuit</h2>
+        <h2 class="ex-title" id="ex4-title">Groth16 vs PLONK on the Same Circuit</h2>
         <div class="demo-grid">
           <div class="panel">
             <div class="ph">Groth16: x^2 = y</div>
@@ -193,8 +194,9 @@
           <div class="ph">Comparison Table</div>
           <div class="pb">
             <table class="commit-table">
+              <caption class="sr-only">Comparison of Groth16 and PLONK proving systems</caption>
               <thead>
-                <tr><th>Property</th><th>Groth16</th><th>PLONK</th></tr>
+                <tr><th scope="col">Property</th><th scope="col">Groth16</th><th scope="col">PLONK</th></tr>
               </thead>
               <tbody>
                 <tr><td>Setup type</td><td>Per-circuit</td><td>Universal (once)</td></tr>
@@ -224,9 +226,9 @@
         </div>
       </section>
 
-      <section class="exhibit" id="exhibit-5">
+      <section class="exhibit" id="exhibit-5" aria-labelledby="ex5-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 05</span><span class="badge badge-real">Trusted Setup Security</span></div>
-        <h2 class="ex-title">Trusted Setup Problem in Depth</h2>
+        <h2 class="ex-title" id="ex5-title">Trusted Setup Problem in Depth</h2>
         <div class="prose">
           <p>Toxic waste is setup randomness. If retained, forged proofs for false statements become possible and soundness collapses.</p>
           <p>Verification keys cannot detect forgeries made by a party holding toxic waste. This is a catastrophic failure mode.</p>
@@ -241,7 +243,7 @@
               <button class="bp" id="setup-run">Run with one cheater</button>
               <button class="bs" id="setup-break">Run all cheating</button>
             </div>
-            <p id="setup-result" class="hash-label">Press a simulation button.</p>
+            <p id="setup-result" class="hash-label" role="status" aria-live="polite">Press a simulation button.</p>
           </div>
         </div>
         <div class="panel">
@@ -259,9 +261,9 @@
         </div>
       </section>
 
-      <section class="exhibit" id="exhibit-6">
+      <section class="exhibit" id="exhibit-6" aria-labelledby="ex6-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 06</span><span class="badge badge-real">Production Deployments</span></div>
-        <h2 class="ex-title">SNARK Applications in Production</h2>
+        <h2 class="ex-title" id="ex6-title">SNARK Applications in Production</h2>
         <div class="cards-4">
           <article class="card">
             <h3 class="card-title">A. Zcash Shielded Transactions (Groth16)</h3>
@@ -297,7 +299,7 @@
     </main>
   </div>
 
-  <footer style="text-align:center; padding: 1.5rem; font-size: 0.85rem; opacity: 0.7; margin-top: 2rem;">
+  <footer class="scripture-footer" role="contentinfo">
     Whether you eat or drink or whatever you do, do it all for the glory of God. — 1 Corinthians 10:31
   </footer>
 
