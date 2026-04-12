@@ -99,7 +99,8 @@
               <button class="bs" id="groth16-chain-run">Run ceremony simulation</button>
             </div>
             <p id="groth16-chain-status" class="hint">Security holds if at least one participant destroys toxic waste.</p>
-            <p class="hint">Examples: Zcash Sapling (88 participants, 2018), Hermez (2021), Semaphore ceremonies.</p>
+            <div class="vl" style="margin-top:10px"><strong>One honest participant:</strong> the ceremony is secure if even one participant honestly deletes their randomness. No one can retroactively extract another participant's contribution from the final SRS.</div>
+            <p class="hint">Examples: Zcash Sapling (88 participants, 2018), Hermez (214 participants, 2021), Semaphore (open participation, thousands of contributors).</p>
           </div>
         </div>
         <div class="vl">
@@ -146,7 +147,8 @@
               <div class="srs-card">Circuit B -> same universal SRS</div>
               <div class="srs-card">Circuit C -> same universal SRS</div>
             </div>
-            <p class="hint">SRS examples: 2^14 constraints about 256 MB, 2^21 constraints about 2 GB.</p>
+            <p class="hint">SRS examples: 2^14 constraints ≈ 256 MB, 2^21 constraints ≈ 2 GB.</p>
+            <div class="vl" style="margin-top:10px"><strong>Contrast with Groth16:</strong> Groth16 requires a new phase-2 ceremony for every circuit. PLONK reuses the same universal SRS — write your circuit today, no ceremony needed.</div>
           </div>
         </div>
         <div class="panel">
@@ -216,6 +218,7 @@
             <p>I need recursive composition -> <strong>Halo2</strong>.</p>
             <p>I cannot run trusted setup -> <strong>Halo2 or STARKs</strong>.</p>
             <p>I need post-quantum security -> <strong>STARKs</strong>.</p>
+            <div class="vl" style="margin-top:10px"><strong>Cross-link:</strong> Neither Groth16 nor PLONK is post-quantum secure — both rely on pairing-based assumptions. For the post-quantum alternative, see STARK Tower.</div>
             <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-stark-tower/" target="_blank" rel="noopener noreferrer">STARK Tower (post-quantum alternative)</a>
           </div>
         </div>
@@ -247,6 +250,7 @@
             <p>Zcash Sprout (2016): 6 collocated participants.</p>
             <p>Zcash Sapling (2018): 88 participants over 6 weeks.</p>
             <p>Hermez 1.0 (2021): 214 participants.</p>
+            <p>Semaphore: open participation, thousands of contributors.</p>
             <p>Ethereum KZG Ceremony for EIP-4844 (2023): approximately 141,000 contributors.</p>
           </div>
         </div>
@@ -261,21 +265,23 @@
         <div class="cards-4">
           <article class="card">
             <h3 class="card-title">A. Zcash Shielded Transactions (Groth16)</h3>
-            <p class="card-desc">Sapling proof system for private spends, with compact pairing-based proofs and fast node verification.</p>
-            <p class="hint">Commonly cited sizes: Groth16 proof 192 bytes on BLS12-381 settings.</p>
+            <p class="card-desc">Every shielded transaction proves: "I know a spending key and note commitment that authorizes spending this amount" without revealing either.</p>
+            <p class="hint">Circuit: Sapling circuit, ~4 million constraints. Proof: 192 bytes (BLS12-381), generated in ~2–3 seconds on mobile. Verification: ~10 ms on a full node. Same circuit since 2018 Sapling upgrade.</p>
           </article>
           <article class="card">
             <h3 class="card-title">B. Polygon zkEVM (PLONK/FFLONK)</h3>
-            <p class="card-desc">Rollup correctness proofs for EVM execution, enabling Ethereum L1 verification without full re-execution.</p>
-            <p class="hint">Proof and verification costs depend on proving stack and on-chain verifier implementation.</p>
+            <p class="card-desc">Proves correct execution of Ethereum EVM bytecode. The proof allows Ethereum mainnet to verify L2 transactions without re-executing them — this is how zkRollups achieve scalability.</p>
+            <p class="hint">Circuit: millions of constraints for EVM opcode coverage. FFLONK (Fast PLONK variant): ~800 byte proofs, ~200 ms verification on-chain.</p>
           </article>
           <article class="card">
             <h3 class="card-title">C. WorldID / Semaphore (Groth16)</h3>
-            <p class="card-desc">Anonymous uniqueness proofs for sybil-resistant participation without identity disclosure.</p>
+            <p class="card-desc">Proves: "I am a unique human who has not already voted in this poll" without revealing which human. Uses Groth16 with the Semaphore ceremony.</p>
+            <p class="hint">Enables anonymous, sybil-resistant voting and credential systems.</p>
           </article>
           <article class="card">
-            <h3 class="card-title">D. zkLogin (Sui, Groth16)</h3>
-            <p class="card-desc">Client-side proofs binding OAuth identity assertions to blockchain accounts with privacy preservation.</p>
+            <h3 class="card-title">D. zkLogin (Sui Network, Groth16)</h3>
+            <p class="card-desc">Proves: "I own this OAuth account (Google/Apple)" without revealing which account or its credentials. Enables blockchain accounts controlled by OAuth credentials.</p>
+            <p class="hint">Generates proofs client-side in ~2 seconds.</p>
           </article>
         </div>
         <div class="vl">
