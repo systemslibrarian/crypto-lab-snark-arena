@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Groth16 vs PLONK: trusted setup vs universal setup in a browser-native zk-SNARK lab." />
+  <meta name="description" content="Groth16 vs PLONK: trusted setup vs universal setup in a browser-native zk-SNARK lab with live finite-field circuit, ceremony, and forgery demos." />
   <title>SNARK Arena</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <script>
     (function () {
       const saved = localStorage.getItem('theme');
       document.documentElement.setAttribute('data-theme', saved ?? 'dark');
     })();
   </script>
-  <script type="module" crossorigin src="/crypto-lab-snark-arena/assets/index-CLHk-FnA.js"></script>
-  <link rel="stylesheet" crossorigin href="/crypto-lab-snark-arena/assets/index-HJ_CHQWI.css">
+  <script type="module" crossorigin src="/crypto-lab-snark-arena/assets/index-DVfay2jV.js"></script>
+  <link rel="stylesheet" crossorigin href="/crypto-lab-snark-arena/assets/index-DrGCnFqk.css">
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -21,14 +22,26 @@
       <div>
         <div class="brand-kicker">Crypto-Lab System Gallery</div>
         <h1 class="brand-title">SNARK Arena</h1>
-        <p class="brand-sub">The definitive browser demo of Groth16 vs PLONK, trusted setup vs universal setup.</p>
+        <p class="brand-sub">The definitive browser demo of Groth16 vs PLONK, trusted setup vs universal setup — with live, inspectable finite-field math.</p>
       </div>
     </header>
+
+    <nav class="toc" id="toc" aria-label="Exhibit navigation">
+      <a href="#exhibit-1" class="toc-link">01 · What is a SNARK</a>
+      <a href="#exhibit-realproof" class="toc-link toc-link-live">★ Real proof</a>
+      <a href="#exhibit-2" class="toc-link">02 · Groth16</a>
+      <a href="#exhibit-3" class="toc-link">03 · PLONK</a>
+      <a href="#exhibit-4" class="toc-link">04 · Head-to-head</a>
+      <a href="#exhibit-5" class="toc-link">05 · Trusted setup</a>
+      <a href="#exhibit-6" class="toc-link">06 · In production</a>
+      <a href="#glossary" class="toc-link">Glossary</a>
+      <a href="#quiz" class="toc-link">Self-check</a>
+    </nav>
 
     <main class="wrap" id="main-content">
       <section class="hero-panel">
         <p class="hero-lead">ZK Proof Lab introduces Schnorr and Fiat-Shamir. SNARK Arena goes deeper into the two systems that power production zero-knowledge systems.</p>
-        <p class="hero-note">Groth16 (Groth 2016) and PLONK (Gabizon, Williamson, Ciobotaru 2019) are shown side by side with setup assumptions, proof sizes, and verification behavior.</p>
+        <p class="hero-note">Groth16 (Groth 2016) and PLONK (Gabizon, Williamson, Ciobotaru 2019) are shown side by side with setup assumptions, proof sizes, and verification behavior. The interactive panels run <strong>real finite-field arithmetic in your browser</strong> — every number is computed live and small enough to check by hand.</p>
         <div class="hero-actions">
           <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab Fundamentals</a>
           <a class="resource-link" href="https://eprint.iacr.org/2016/260" target="_blank" rel="noopener noreferrer">Groth16 Paper</a>
@@ -36,9 +49,11 @@
         </div>
       </section>
 
+      <!-- ════════════════ EXHIBIT 01 ════════════════ -->
       <section class="exhibit" id="exhibit-1" aria-labelledby="ex1-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 01</span><span class="badge badge-real">Definition and Properties</span></div>
         <h2 class="ex-title" id="ex1-title">What is a zk-SNARK?</h2>
+        <p class="objective"><strong>You'll learn:</strong> what the letters S-N-A-R-K mean, and what an arithmetic circuit and a witness actually <em>are</em> — by driving one yourself below.</p>
         <div class="prose">
           <p><strong>SNARK</strong> means Succinct Non-interactive ARgument of Knowledge.</p>
           <p><strong>Succinct:</strong> proof is small (often hundreds of bytes) regardless of computation size.</p>
@@ -47,19 +62,75 @@
           <p><strong>Completeness:</strong> honest prover with valid witness is accepted.</p>
           <p><strong>Soundness:</strong> cheating prover without witness is rejected except negligible probability.</p>
           <p><strong>Zero-knowledge:</strong> proof reveals nothing about the witness beyond validity.</p>
-          <p>A circuit is an arithmetic constraint system over a finite field. Example for x^3 + x + 5 = 35:</p>
-          <p>v1 = x * x, v2 = v1 * x, v2 + x + 5 = 35.</p>
-          <p>Groth16 is per-circuit setup with smallest proofs and fastest verification. PLONK is universal setup with more circuit flexibility.</p>
-          <p>For foundational Schnorr, Fiat-Shamir, and commitment mechanics, see <a href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab</a>.</p>
+          <p>A circuit is an arithmetic constraint system over a finite field. The classic teaching example proves knowledge of <span class="mono-inline">x</span> such that <span class="mono-inline">x³ + x + 5 = 35</span>. It compiles to three rank-1 constraints over the field, with witness wires <span class="mono-inline">v1 = x·x</span> and <span class="mono-inline">v2 = v1·x</span>.</p>
+        </div>
+
+        <!-- Interactive circuit playground (built by src/ui/playground.ts) -->
+        <div class="panel" id="playground" aria-labelledby="playground-h">
+          <h3 class="ph" id="playground-h">Interactive: R1CS Circuit Playground</h3>
+          <div class="pb">
+            <p class="play-statement">Public statement: <strong>“I know a secret <span class="mono-inline">x</span> with <span class="mono-inline">x³ + x + 5 = 35</span>.”</strong> The verifier sees only that the output wire equals <strong>35</strong>. Your secret <span class="mono-inline">x</span> is the witness.</p>
+            <div class="play-control">
+              <label for="play-x" class="play-label">Secret witness <span class="mono-inline">x</span> =</label>
+              <input type="range" id="play-x" min="0" max="9" step="1" value="3" aria-describedby="play-verdict" />
+              <output id="play-x-val" class="play-xval" for="play-x">3</output>
+            </div>
+            <p class="hint">Drag to choose <span class="mono-inline">x</span>. The wires recompute over the field <span class="mono-inline">F<sub>p</sub></span>, <span class="mono-inline">p = 8191</span>, and every constraint is checked live.</p>
+
+            <div class="witness-vec" id="play-witness" aria-live="polite"></div>
+            <div class="constraint-list" id="play-constraints" role="list" aria-label="Constraint checks"></div>
+
+            <div id="play-verdict" class="play-verdict" role="status" aria-live="polite"></div>
+
+            <div class="controls">
+              <button class="bs" id="play-cheat" type="button">Try to cheat: forge the v2 wire</button>
+              <button class="bs" id="play-reset" type="button" hidden>Stop cheating</button>
+            </div>
+            <p class="hint" id="play-cheat-note"></p>
+          </div>
         </div>
         <div class="vl">
-          <strong>Why this matters:</strong> zk-SNARKs underpin Zcash private transfers, zkEVM rollups, zkLogin, Semaphore identity proofs, and anonymous credential systems.
+          <strong>Why this matters:</strong> zk-SNARKs underpin Zcash private transfers, zkEVM rollups, zkLogin, Semaphore identity proofs, and anonymous credential systems. For foundational Schnorr, Fiat-Shamir, and commitment mechanics, see <a href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab</a>.
         </div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> A proof is "I have a witness that satisfies every constraint." The multiplication gates pin the intermediate wires; the public wire pins the answer. Only <span class="mono-inline">x = 3</span> satisfies all three.</div>
       </section>
 
+      <!-- ════════════════ FEATURED: REAL PROOF ════════════════ -->
+      <section class="exhibit" id="exhibit-realproof" aria-labelledby="rp-title">
+        <div class="ex-row"><span class="ex-num ex-num-live">LIVE</span><span class="badge badge-live">Real Groth16 · runs in your browser</span></div>
+        <h2 class="ex-title" id="rp-title">Now Prove It For Real</h2>
+        <p class="objective"><strong>You'll learn:</strong> that none of this is hand-waving. Here is a <em>genuine</em> Groth16 proof of the exact same circuit, generated and verified entirely in your browser with <a href="https://github.com/iden3/snarkjs" target="_blank" rel="noopener noreferrer">snarkjs</a> — no server, no simulation.</p>
+        <div class="prose">
+          <p>The playground above used a toy field so you could read every number. This panel runs the production stack on the same statement <span class="mono-inline">x³ + x + 5 = out</span>: a <a href="zk/cubic.circom" target="_blank" rel="noopener noreferrer">circom circuit</a> compiled to a witness generator, proven over the BN254 curve using a real powers-of-tau + phase-2 trusted setup.</p>
+          <p>The artifacts — the witness-generator WASM (34 KB), the proving key (3.6 KB), and the verification key — are <strong>static files shipped with the page</strong>. That is precisely why a real SNARK works on GitHub Pages with no backend: proving and verifying are pure client-side computation.</p>
+        </div>
+        <div class="panel" id="realproof" aria-labelledby="rp-panel-h">
+          <h3 class="ph" id="rp-panel-h">Live: Groth16 prove + verify (snarkjs / BN254)</h3>
+          <div class="pb">
+            <div class="play-control">
+              <label for="rp-x" class="play-label">Secret witness <span class="mono-inline">x</span> =</label>
+              <input type="range" id="rp-x" min="0" max="20" step="1" value="3" />
+              <output id="rp-x-val" class="play-xval" for="rp-x">3</output>
+            </div>
+            <p class="hint">Pick your secret <span class="mono-inline">x</span>. The prover computes <span class="mono-inline">out = x³ + x + 5</span> and proves it knows an <span class="mono-inline">x</span> producing that output — without revealing <span class="mono-inline">x</span>. First proof loads the ~0.7 MB snarkjs library; later proofs are instant.</p>
+            <div class="controls">
+              <button class="bp" id="rp-prove" type="button">Generate real proof</button>
+              <button class="bp" id="rp-verify" type="button">Verify</button>
+              <button class="bs" id="rp-tamper" type="button">Tamper &amp; verify</button>
+            </div>
+            <div id="rp-out" class="calc-box" aria-live="polite"></div>
+            <div class="trust-banner trust-real"><strong>Not simulated:</strong> <span class="mono-inline">snarkjs.groth16.fullProve</span> runs the real proving algorithm on the WASM witness generator and a proving key from an actual ceremony. It runs single-threaded — GitHub Pages can't send the COOP/COEP headers that multi-threaded WASM needs — which is still plenty fast for a circuit this size.</div>
+          </div>
+        </div>
+        <div class="vl"><strong>Why this matters:</strong> the gap between "toy demo" and "production zk" is mostly artifact size and ceremony rigor, not architecture. The same three calls — compile, prove, verify — scale from this 3-constraint circuit to Zcash's millions.</div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Real client-side SNARKs need no server — only static artifacts. The proof is ~256 bytes and verifies in milliseconds, no matter how large the circuit.</div>
+      </section>
+
+      <!-- ════════════════ EXHIBIT 02 ════════════════ -->
       <section class="exhibit" id="exhibit-2" aria-labelledby="ex2-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 02</span><span class="badge badge-real">Groth16 Per-Circuit Setup</span></div>
         <h2 class="ex-title" id="ex2-title">Groth16: Per-Circuit Trusted Setup</h2>
+        <p class="objective"><strong>You'll learn:</strong> why Groth16's proofs are the smallest in production — and the price it pays: a fresh ceremony for every circuit.</p>
         <div class="prose">
           <p>Groth16 is a pairing-based SNARK over curves like BN254 and BLS12-381 using QAP-style encodings (Groth, EUROCRYPT 2016).</p>
           <p>Setup has Powers of Tau plus a circuit-specific phase 2 that emits proving key and verification key.</p>
@@ -67,17 +138,17 @@
         </div>
         <div class="demo-grid">
           <div class="panel">
-            <div class="ph">Workflow</div>
+            <h3 class="ph">Workflow</h3>
             <div class="pb">
               <div class="workflow">Circuit definition</div>
               <div class="workflow">Powers of Tau (universal)</div>
               <div class="workflow">Phase 2 (circuit-specific)</div>
               <div class="workflow">proving key + verification key</div>
-              <div class="workflow">prove -> verify</div>
+              <div class="workflow">prove → verify</div>
             </div>
           </div>
           <div class="panel">
-            <div class="ph">Sample Parameters: x^2 = 9</div>
+            <h3 class="ph">Sample Parameters: x² = 9</h3>
             <div class="pb">
               <p>Constraint count: 2</p>
               <p>Proving key size: 42 KB (simulated educational profile)</p>
@@ -85,7 +156,7 @@
               <p>Proof size: <strong>128 bytes (BN254)</strong></p>
               <p>Proof bytes (hex, truncated): <span id="groth16-proof-hex" class="hash-box"></span></p>
               <p>Verification time: <span id="groth16-time">1.4 ms</span></p>
-              <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> Parameters from snarkjs benchmark data.</div>
+              <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> Proof bytes are random for visualization; sizes/timings follow snarkjs benchmark conventions.</div>
               <div class="controls">
                 <button class="bp" id="groth16-verify">Verify proof</button>
               </div>
@@ -94,25 +165,28 @@
           </div>
         </div>
         <div class="panel">
-          <div class="ph">Trusted Setup Ceremony Visualizer</div>
+          <h3 class="ph">Trusted Setup Ceremony Visualizer</h3>
           <div class="pb">
             <div class="ceremony-chain" id="groth16-chain"></div>
             <div class="controls">
               <button class="bs" id="groth16-chain-run">Run ceremony simulation</button>
             </div>
             <p id="groth16-chain-status" class="hint" role="status" aria-live="polite">Security holds if at least one participant destroys toxic waste.</p>
-            <div class="vl" style="margin-top:10px"><strong>One honest participant:</strong> the ceremony is secure if even one participant honestly deletes their randomness. No one can retroactively extract another participant's contribution from the final SRS.</div>
+            <div class="vl" style="margin-top:10px"><strong>One honest participant:</strong> the ceremony is secure if even one participant honestly deletes their randomness. No one can retroactively extract another participant's contribution from the final SRS. <a href="#exhibit-5">See the real math in Exhibit 05 ↓</a></div>
             <p class="hint">Examples: Zcash Sapling (88 participants, 2018), Hermez (214 participants, 2021), Semaphore (open participation, thousands of contributors).</p>
           </div>
         </div>
         <div class="vl">
           <strong>Why this matters:</strong> Groth16's tiny proofs and fast verification are ideal when every byte and millisecond matters, but each circuit needs its own phase-2 ceremony.
         </div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Smallest proof + fastest verify in production, paid for by a per-circuit trusted setup. Change the circuit, run a new ceremony.</div>
       </section>
 
+      <!-- ════════════════ EXHIBIT 03 ════════════════ -->
       <section class="exhibit" id="exhibit-3" aria-labelledby="ex3-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 03</span><span class="badge badge-real">PLONK Universal Setup</span></div>
         <h2 class="ex-title" id="ex3-title">PLONK: Universal Trusted Setup</h2>
+        <p class="objective"><strong>You'll learn:</strong> how one universal setup serves many circuits, trading a few hundred extra proof bytes for deployment freedom.</p>
         <div class="prose">
           <p>PLONK uses polynomial commitments and a permutation argument in Lagrange form (ePrint 2019/953).</p>
           <p>One universal setup (Powers of Tau) can support many circuits up to a maximum size.</p>
@@ -120,16 +194,16 @@
         </div>
         <div class="demo-grid">
           <div class="panel">
-            <div class="ph">Workflow</div>
+            <h3 class="ph">Workflow</h3>
             <div class="pb">
               <div class="workflow">Powers of Tau (once)</div>
               <div class="workflow">Any circuit under SRS bound</div>
-              <div class="workflow">prove -> verify</div>
+              <div class="workflow">prove → verify</div>
               <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> Parameters from snarkjs benchmark data.</div>
             </div>
           </div>
           <div class="panel">
-            <div class="ph">Sample Parameters: x^2 = 9</div>
+            <h3 class="ph">Sample Parameters: x² = 9</h3>
             <div class="pb">
               <p>Proof size: <strong>448 bytes</strong></p>
               <p>Proof bytes (hex, truncated): <span id="plonk-proof-hex" class="hash-box"></span></p>
@@ -142,19 +216,19 @@
           </div>
         </div>
         <div class="panel">
-          <div class="ph">Universal Setup Visualizer</div>
+          <h3 class="ph">Universal Setup Visualizer</h3>
           <div class="pb">
             <div class="srs-grid">
-              <div class="srs-card">Circuit A -> same universal SRS</div>
-              <div class="srs-card">Circuit B -> same universal SRS</div>
-              <div class="srs-card">Circuit C -> same universal SRS</div>
+              <div class="srs-card">Circuit A → same universal SRS</div>
+              <div class="srs-card">Circuit B → same universal SRS</div>
+              <div class="srs-card">Circuit C → same universal SRS</div>
             </div>
-            <p class="hint">SRS examples: 2^14 constraints ≈ 256 MB, 2^21 constraints ≈ 2 GB.</p>
+            <p class="hint">SRS examples: 2¹⁴ constraints ≈ 256 MB, 2²¹ constraints ≈ 2 GB.</p>
             <div class="vl" style="margin-top:10px"><strong>Contrast with Groth16:</strong> Groth16 requires a new phase-2 ceremony for every circuit. PLONK reuses the same universal SRS — write your circuit today, no ceremony needed.</div>
           </div>
         </div>
         <div class="panel">
-          <div class="ph">PLONK Variants</div>
+          <h3 class="ph">PLONK Variants</h3>
           <div class="pb">
             <p>PLONK (original): KZG commitments.</p>
             <p>TurboPlonk: custom gates (Aztec).</p>
@@ -165,14 +239,17 @@
         <div class="vl">
           <strong>Why this matters:</strong> universal setup lowers deployment friction by removing per-circuit ceremonies for new applications.
         </div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Set up once, prove any circuit under the size bound. Slightly bigger proofs buy you freedom from per-circuit ceremonies.</div>
       </section>
 
+      <!-- ════════════════ EXHIBIT 04 ════════════════ -->
       <section class="exhibit" id="exhibit-4" aria-labelledby="ex4-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 04</span><span class="badge badge-real">Head-to-Head</span></div>
         <h2 class="ex-title" id="ex4-title">Groth16 vs PLONK on the Same Circuit</h2>
+        <p class="objective"><strong>You'll learn:</strong> how to choose between the two — and where each one wins.</p>
         <div class="demo-grid">
           <div class="panel">
-            <div class="ph">Groth16: x^2 = y</div>
+            <h3 class="ph">Groth16: x² = y</h3>
             <div class="pb">
               <p>Proof bytes: <span id="head-groth16" class="hash-box"></span></p>
               <p>Proof size: 128 bytes (BN254)</p>
@@ -181,7 +258,7 @@
             </div>
           </div>
           <div class="panel">
-            <div class="ph">PLONK: x^2 = y</div>
+            <h3 class="ph">PLONK: x² = y</h3>
             <div class="pb">
               <p>Proof bytes: <span id="head-plonk" class="hash-box"></span></p>
               <p>Proof size: 448 bytes</p>
@@ -191,8 +268,8 @@
           </div>
         </div>
         <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> byte strings are generated for visualization, with size and timing ranges aligned to snarkjs benchmark conventions.</div>
-        <div class="table-wrap panel">
-          <div class="ph">Comparison Table</div>
+        <div class="table-wrap panel" role="region" aria-label="Groth16 vs PLONK comparison table (scrollable)" tabindex="0">
+          <h3 class="ph">Comparison Table</h3>
           <div class="pb">
             <table class="commit-table">
               <caption class="sr-only">Comparison of Groth16 and PLONK proving systems</caption>
@@ -200,55 +277,80 @@
                 <tr><th scope="col">Property</th><th scope="col">Groth16</th><th scope="col">PLONK</th></tr>
               </thead>
               <tbody>
-                <tr><td>Setup type</td><td>Per-circuit</td><td>Universal (once)</td></tr>
-                <tr><td>Proof size</td><td>128 bytes (BN254)</td><td>~400-500 bytes</td></tr>
-                <tr><td>Verification time</td><td>~1-2ms</td><td>~3-5ms</td></tr>
-                <tr><td>Proving time</td><td>Fast</td><td>Slightly slower</td></tr>
-                <tr><td>Circuit language</td><td>R1CS / circom</td><td>PLONKish / Halo2</td></tr>
-                <tr><td>Trusted setup risk</td><td>Circuit-specific</td><td>Universal SRS</td></tr>
-                <tr><td>Recursive SNARKs</td><td>Complex</td><td>Native in Halo2 variants</td></tr>
-                <tr><td>Post-quantum safe</td><td>No (pairing-based)</td><td>No (pairing-based)</td></tr>
-                <tr><td>Used in</td><td>Zcash, Semaphore</td><td>Aztec, Polygon zkEVM</td></tr>
+                <tr><th scope="row">Setup type</th><td>Per-circuit</td><td>Universal (once)</td></tr>
+                <tr><th scope="row">Proof size</th><td>128 bytes (BN254)</td><td>~400-500 bytes</td></tr>
+                <tr><th scope="row">Verification time</th><td>~1-2ms</td><td>~3-5ms</td></tr>
+                <tr><th scope="row">Proving time</th><td>Fast</td><td>Slightly slower</td></tr>
+                <tr><th scope="row">Circuit language</th><td>R1CS / circom</td><td>PLONKish / Halo2</td></tr>
+                <tr><th scope="row">Trusted setup risk</th><td>Circuit-specific</td><td>Universal SRS</td></tr>
+                <tr><th scope="row">Recursive SNARKs</th><td>Complex</td><td>Native in Halo2 variants</td></tr>
+                <tr><th scope="row">Post-quantum safe</th><td>No (pairing-based)</td><td>No (pairing-based)</td></tr>
+                <tr><th scope="row">Used in</th><td>Zcash, Semaphore</td><td>Aztec, Polygon zkEVM</td></tr>
               </tbody>
             </table>
           </div>
         </div>
         <div class="panel">
-          <div class="ph">Decision Tree</div>
+          <h3 class="ph">Decision Tree</h3>
           <div class="pb decision-tree">
-            <p>I need smallest proof for fixed circuit -> <strong>Groth16</strong>.</p>
-            <p>I need circuit flexibility without new ceremonies -> <strong>PLONK</strong>.</p>
-            <p>I need recursive composition -> <strong>Halo2</strong>.</p>
-            <p>I cannot run trusted setup -> <strong>Halo2 or STARKs</strong>.</p>
-            <p>I need post-quantum security -> <strong>STARKs</strong>.</p>
+            <p>I need smallest proof for fixed circuit → <strong>Groth16</strong>.</p>
+            <p>I need circuit flexibility without new ceremonies → <strong>PLONK</strong>.</p>
+            <p>I need recursive composition → <strong>Halo2</strong>.</p>
+            <p>I cannot run trusted setup → <strong>Halo2 or STARKs</strong>.</p>
+            <p>I need post-quantum security → <strong>STARKs</strong>.</p>
             <div class="vl" style="margin-top:10px"><strong>Cross-link:</strong> Neither Groth16 nor PLONK is post-quantum secure — both rely on pairing-based assumptions. For the post-quantum alternative, see STARK Tower.</div>
             <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-stark-tower/" target="_blank" rel="noopener noreferrer">STARK Tower (post-quantum alternative)</a>
           </div>
         </div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Fixed circuit, every byte counts → Groth16. Evolving circuits, no new ceremonies → PLONK. No setup or post-quantum → Halo2 / STARKs.</div>
       </section>
 
+      <!-- ════════════════ EXHIBIT 05 ════════════════ -->
       <section class="exhibit" id="exhibit-5" aria-labelledby="ex5-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 05</span><span class="badge badge-real">Trusted Setup Security</span></div>
         <h2 class="ex-title" id="ex5-title">Trusted Setup Problem in Depth</h2>
+        <p class="objective"><strong>You'll learn:</strong> what "toxic waste" really is, why one honest participant saves the whole ceremony, and — with live numbers — exactly how a leaked secret forges a proof for a false statement.</p>
         <div class="prose">
-          <p>Toxic waste is setup randomness. If retained, forged proofs for false statements become possible and soundness collapses.</p>
+          <p>Toxic waste is the secret setup exponent <span class="mono-inline">τ</span>. If retained, forged proofs for false statements become possible and soundness collapses.</p>
           <p>Verification keys cannot detect forgeries made by a party holding toxic waste. This is a catastrophic failure mode.</p>
-          <p>MPC ceremonies chain contributions from many participants; security holds if at least one honest participant deletes their randomness.</p>
+          <p>MPC ceremonies chain contributions from many participants; the combined secret is their <em>product</em> <span class="mono-inline">τ = τ₁·τ₂·…·τₙ</span>, so security holds if at least one honest participant deletes their factor.</p>
           <p>Groth16 compromise is circuit-scoped to the affected phase-2 setup, while universal setup compromise can affect all circuits using that SRS.</p>
         </div>
-        <div class="panel">
-          <div class="ph">5-Participant Ceremony Simulation</div>
+
+        <!-- Real ceremony with running product (built by src/ui/ceremony.ts) -->
+        <div class="panel" id="ceremony" aria-labelledby="ceremony-h">
+          <h3 class="ph" id="ceremony-h">Live: Powers-of-Tau Ceremony (real arithmetic)</h3>
           <div class="pb">
-            <div class="ceremony-chain" id="setup-chain"></div>
+            <p class="hint">Five participants each contribute a secret factor <span class="mono-inline">τᵢ</span>. The combined secret is the running product, and the public SRS element is <span class="mono-inline">g<sup>τ</sup></span>. Toggle who deletes their waste, then run.</p>
+            <div class="participant-toggles" id="ceremony-toggles" role="group" aria-label="Per-participant waste deletion"></div>
+            <div class="ceremony-chain" id="ceremony-chain"></div>
             <div class="controls">
-              <button class="bp" id="setup-run">Run with one cheater</button>
-              <button class="bs" id="setup-break">Run all cheating</button>
+              <button class="bp" id="ceremony-run" type="button">Run ceremony</button>
+              <button class="bs" id="ceremony-randomize" type="button">New random contributions</button>
             </div>
-            <p id="setup-result" class="hash-label" role="status" aria-live="polite">Press a simulation button.</p>
+            <div class="calc-box" id="ceremony-calc" aria-live="polite"></div>
+            <div id="ceremony-verdict" class="play-verdict" role="status" aria-live="polite"></div>
+            <div class="trust-banner trust-conceptual"><strong>Toy scale:</strong> group order <span class="mono-inline">r = 17</span>, generator <span class="mono-inline">g = 64</span> mod 103. Real ceremonies use 254-bit curves where recovering <span class="mono-inline">τ</span> from <span class="mono-inline">g<sup>τ</sup></span> is infeasible (discrete log).</div>
           </div>
         </div>
+
+        <!-- KZG forgery demo (built by src/ui/kzg.ts) -->
+        <div class="panel" id="forgery" aria-labelledby="forgery-h">
+          <h3 class="ph" id="forgery-h">Live: Forge a Proof if τ Leaks (KZG opening)</h3>
+          <div class="pb">
+            <p class="hint">A KZG commitment to a polynomial <span class="mono-inline" id="forge-poly">f(x)</span> is <span class="mono-inline">C = g<sup>f(τ)</sup></span>. An honest opening proves <span class="mono-inline">f(z) = y</span>. Watch what an honest prover can do, then what an attacker who kept <span class="mono-inline">τ</span> can do.</p>
+            <div class="forge-grid" id="forge-facts"></div>
+            <div class="controls">
+              <button class="bp" id="forge-honest" type="button">Open honestly: f(z) = y</button>
+              <button class="bp" id="forge-lie" type="button">Forge a lie with leaked τ</button>
+            </div>
+            <div class="calc-box" id="forge-calc" aria-live="polite"></div>
+            <div class="trust-banner trust-conceptual"><strong>What's real vs. shown:</strong> the SRS, commitment, quotient polynomial, and proof element are computed with real modular arithmetic. The accept/reject decision is the exponent equality <span class="mono-inline">f(τ)−y = q(τ)·(τ−z)</span> that a real bilinear pairing enforces using only <span class="mono-inline">C</span>, <span class="mono-inline">π</span>, and the SRS — never <span class="mono-inline">τ</span>.</div>
+          </div>
+        </div>
+
         <div class="panel">
-          <div class="ph">Ceremony Timeline</div>
+          <h3 class="ph">Ceremony Timeline</h3>
           <div class="pb">
             <p>Zcash Sprout (2016): 6 collocated participants.</p>
             <p>Zcash Sapling (2018): 88 participants over 6 weeks.</p>
@@ -260,11 +362,14 @@
         <div class="vl">
           <strong>Why this matters:</strong> trusted setup is an operational security cornerstone. If it fails, proof security fails completely.
         </div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> <span class="mono-inline">τ</span> is the keys to the kingdom. The ceremony survives if <em>one</em> participant deletes their factor; it dies the instant <em>anyone</em> can reconstruct <span class="mono-inline">τ</span> — then any lie verifies.</div>
       </section>
 
+      <!-- ════════════════ EXHIBIT 06 ════════════════ -->
       <section class="exhibit" id="exhibit-6" aria-labelledby="ex6-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 06</span><span class="badge badge-real">Production Deployments</span></div>
         <h2 class="ex-title" id="ex6-title">SNARK Applications in Production</h2>
+        <p class="objective"><strong>You'll learn:</strong> where these proving systems run today, and what statement each one proves.</p>
         <div class="cards-4">
           <article class="card">
             <h3 class="card-title">A. Zcash Shielded Transactions (Groth16)</h3>
@@ -290,12 +395,34 @@
         <div class="vl">
           <strong>Why this matters:</strong> SNARKs are deployed infrastructure for privacy, identity, and scaling, not only research artifacts.
         </div>
-        <div class="hero-actions">
-          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab</a>
-          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-stark-tower/" target="_blank" rel="noopener noreferrer">STARK Tower</a>
-          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-pairing-gate/" target="_blank" rel="noopener noreferrer">Pairing Gate</a>
-          <a class="resource-link" href="https://systemslibrarian.github.io/crypto-compare/" target="_blank" rel="noopener noreferrer">Crypto Compare</a>
-        </div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Every deployment is one sentence — "I know X without revealing X" — compiled to a circuit and proven succinctly.</div>
+      </section>
+
+      <!-- ════════════════ GLOSSARY ════════════════ -->
+      <section class="exhibit" id="glossary" aria-labelledby="glossary-title">
+        <div class="ex-row"><span class="ex-num">REFERENCE</span><span class="badge badge-real">Glossary</span></div>
+        <h2 class="ex-title" id="glossary-title">Glossary of Terms</h2>
+        <dl class="glossary">
+          <div class="gl-item"><dt>Witness</dt><dd>The secret input the prover knows (here, <span class="mono-inline">x</span>). A valid witness makes every constraint hold.</dd></div>
+          <div class="gl-item"><dt>Circuit</dt><dd>A computation expressed as arithmetic constraints over a finite field. The statement to prove.</dd></div>
+          <div class="gl-item"><dt>R1CS</dt><dd>Rank-1 Constraint System: each constraint has the shape <span class="mono-inline">(A·s)(B·s) = (C·s)</span> — one multiplication per constraint.</dd></div>
+          <div class="gl-item"><dt>Finite field <span class="mono-inline">F<sub>p</sub></span></dt><dd>Arithmetic mod a prime <span class="mono-inline">p</span>. All SNARK values live here. Division means multiplying by a modular inverse.</dd></div>
+          <div class="gl-item"><dt>Trusted setup / SRS</dt><dd>A Structured Reference String of group elements <span class="mono-inline">g<sup>τⁱ</sup></span> generated once, needed by pairing-based SNARKs.</dd></div>
+          <div class="gl-item"><dt>Toxic waste (<span class="mono-inline">τ</span>)</dt><dd>The secret exponent behind the SRS. Must be destroyed; whoever keeps it can forge proofs.</dd></div>
+          <div class="gl-item"><dt>KZG commitment</dt><dd>A constant-size commitment <span class="mono-inline">g<sup>f(τ)</sup></span> to a polynomial, with succinct opening proofs. The core of PLONK.</dd></div>
+          <div class="gl-item"><dt>Pairing</dt><dd>A bilinear map <span class="mono-inline">e(g<sup>a</sup>, g<sup>b</sup>) = e(g,g)<sup>ab</sup></span> that lets a verifier check products "in the exponent" without learning <span class="mono-inline">a</span> or <span class="mono-inline">b</span>.</dd></div>
+          <div class="gl-item"><dt>Succinct</dt><dd>Proof size and verification time stay small (often constant) no matter how large the computation is.</dd></div>
+          <div class="gl-item"><dt>Soundness</dt><dd>A prover without a valid witness is rejected except with negligible probability.</dd></div>
+        </dl>
+      </section>
+
+      <!-- ════════════════ SELF-CHECK QUIZ ════════════════ -->
+      <section class="exhibit" id="quiz" aria-labelledby="quiz-title">
+        <div class="ex-row"><span class="ex-num">CHECKPOINT</span><span class="badge badge-real">Self-Check</span></div>
+        <h2 class="ex-title" id="quiz-title">Self-Check: Did It Land?</h2>
+        <p class="objective"><strong>Five questions.</strong> Answer from memory; each reveals an explanation. No score is stored — this is for you.</p>
+        <div id="quiz-root"></div>
+        <div id="quiz-score" class="play-verdict" role="status" aria-live="polite"></div>
       </section>
 
       <footer class="scripture-footer" role="contentinfo">
@@ -303,6 +430,8 @@
       </footer>
     </main>
   </div>
+
+  <button class="to-top" id="to-top" type="button" aria-label="Back to top" hidden>↑</button>
 
 </body>
 </html>
