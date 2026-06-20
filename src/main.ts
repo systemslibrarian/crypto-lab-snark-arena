@@ -1,3 +1,10 @@
+import { initPlayground } from './ui/playground';
+import { initRealProof } from './ui/realproof';
+import { initCeremony } from './ui/ceremony';
+import { initKzg } from './ui/kzg';
+import { initQuiz } from './ui/quiz';
+import { initNav } from './ui/nav';
+
 function initThemeToggle() {
   const root = document.documentElement;
   const header = document.querySelector('.site-header');
@@ -76,6 +83,7 @@ function bindVerificationButtons() {
   });
 }
 
+// The legacy Groth16 ceremony animation in Exhibit 02 (illustrative, no math).
 function buildChain(containerId: string) {
   const container = document.getElementById(containerId);
   if (!container) {
@@ -104,6 +112,7 @@ function animateChain(
   buttons: HTMLElement[],
   onDone: () => void,
 ) {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   buttons.forEach((b) => {
     if (b instanceof HTMLButtonElement) b.disabled = true;
   });
@@ -111,27 +120,34 @@ function animateChain(
     n.className = 'chain-node';
     n.textContent = `P${i + 1}`;
   });
+
+  const settle = (idx: number) => {
+    const n = nodes[idx];
+    n.className = `chain-node ${statuses[idx]}`;
+    n.textContent = labels[idx];
+    n.setAttribute('aria-label', `Participant ${idx + 1}: ${labels[idx]}`);
+    if (idx === nodes.length - 1) {
+      buttons.forEach((b) => { if (b instanceof HTMLButtonElement) b.disabled = false; });
+      onDone();
+    }
+  };
+
+  if (reduceMotion) {
+    nodes.forEach((_, idx) => settle(idx));
+    return;
+  }
+
   nodes.forEach((n, idx) => {
     setTimeout(() => {
       n.className = `chain-node active`;
       n.textContent = `P${idx + 1} contributing...`;
       n.setAttribute('aria-label', `Participant ${idx + 1}: contributing`);
-      setTimeout(() => {
-        n.className = `chain-node ${statuses[idx]}`;
-        n.textContent = labels[idx];
-        n.setAttribute('aria-label', `Participant ${idx + 1}: ${labels[idx]}`);
-        if (idx === nodes.length - 1) {
-          buttons.forEach((b) => {
-            if (b instanceof HTMLButtonElement) b.disabled = false;
-          });
-          onDone();
-        }
-      }, 250);
+      setTimeout(() => settle(idx), 250);
     }, idx * 500);
   });
 }
 
-function bindCeremonyVisualizers() {
+function bindLegacyCeremony() {
   const grothNodes = buildChain('groth16-chain');
   const grothRun = document.getElementById('groth16-chain-run');
   const grothStatus = document.getElementById('groth16-chain-status');
@@ -145,38 +161,19 @@ function bindCeremonyVisualizers() {
       if (grothStatus) grothStatus.textContent = 'Secure: at least one honest participant destroyed toxic waste. Ceremony is safe.';
     });
   });
-
-  const setupNodes = buildChain('setup-chain');
-  const setupRun = document.getElementById('setup-run');
-  const setupBreak = document.getElementById('setup-break');
-  const setupResult = document.getElementById('setup-result');
-
-  const setupBtns = [setupRun, setupBreak].filter(Boolean) as HTMLElement[];
-
-  setupRun?.addEventListener('click', () => {
-    const statuses: Array<'safe' | 'bad'> = setupNodes.map((_, i) => (i === 1 ? 'bad' : 'safe'));
-    const labels = setupNodes.map((_, i) => (i === 1 ? `P${i + 1} ✗ cheating` : `P${i + 1} ✓ honest`));
-    if (setupResult) setupResult.textContent = 'Running ceremony…';
-    animateChain(setupNodes, statuses, labels, setupBtns, () => {
-      if (setupResult) setupResult.textContent = 'Result: ceremony remains secure — the cheater cannot extract honest participants\' randomness from the final SRS.';
-    });
-  });
-
-  setupBreak?.addEventListener('click', () => {
-    const statuses: Array<'safe' | 'bad'> = setupNodes.map(() => 'bad');
-    const labels = setupNodes.map((_, i) => `P${i + 1} ✗ retained waste`);
-    if (setupResult) setupResult.textContent = 'Running ceremony…';
-    animateChain(setupNodes, statuses, labels, setupBtns, () => {
-      if (setupResult) setupResult.textContent = 'Result: catastrophic compromise — all participants retained toxic waste. Soundness is broken; fake proofs can be created.';
-    });
-  });
 }
 
 function init() {
   initThemeToggle();
+  initNav();
   showProofHexes();
   bindVerificationButtons();
-  bindCeremonyVisualizers();
+  bindLegacyCeremony();
+  initPlayground();
+  initRealProof();
+  initCeremony();
+  initKzg();
+  initQuiz();
 }
 
 if (document.readyState === 'loading') {
