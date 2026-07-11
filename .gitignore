@@ -1,3 +1,6 @@
 node_modules/
 dist/
 zkbuild/
+/test-results/
+/playwright-report/
+/.pw-browsers/
