@@ -99,6 +99,14 @@ export interface CommitResult { exp: number; element: number; }
 
 /** C = g^(f(τ)). Computed from the SRS alone — note τ is never used here. */
 export function kzgCommit(f: Poly, srs: SrsElement[]): CommitResult {
+  // The SRS must expose g^(τ^i) for every coefficient index of f, i.e. its
+  // degree must cover deg(f). Committing to a polynomial the SRS was not sized
+  // for is undefined in KZG; catch it instead of silently reading undefined.
+  if (f.length > srs.length) {
+    throw new Error(
+      `SRS degree ${srs.length - 1} too small to commit to a degree-${f.length - 1} polynomial`,
+    );
+  }
   // C = Π  SRS[i]^(a_i)  =  g^(Σ a_i τ^i)  =  g^(f(τ))
   let element = 1;
   f.forEach((coeff, i) => {
@@ -123,6 +131,11 @@ export interface OpenResult {
 
 /** Honest opening of f at z, using only the SRS. */
 export function kzgOpen(f: Poly, z: number, claimedY: number, srs: SrsElement[]): OpenResult {
+  if (f.length > srs.length) {
+    throw new Error(
+      `SRS degree ${srs.length - 1} too small to open a degree-${f.length - 1} polynomial`,
+    );
+  }
   const shifted = [...f];
   shifted[0] = Fr.sub(shifted[0], claimedY); // f(X) - y
   const { quotient, remainder } = polyDivLinear(Fr, shifted, z);
@@ -143,10 +156,26 @@ export interface VerifyResult {
 }
 
 /**
+ * Honest disclosure of what this check is — and is not. A real KZG verifier
+ * checks  e(C·g^-y, g) = e(π, g^(τ-z))  with a BILINEAR PAIRING, using only the
+ * public commitment C, the proof π and the SRS; it never sees τ. This demo has
+ * no pairing on its toy group, so kzgVerify below tests the SAME algebraic
+ * relation the pairing enforces — the exponent equality f(τ)-y = q(τ)(τ-z) —
+ * but does so by reading the exponents directly (including τ). It is a faithful
+ * model of WHAT the pairing verifies, not of HOW; it must not be read as a
+ * pairing implementation. This string is shown at the verify step in the UI.
+ */
+export const PAIRING_NOTE =
+  'This checks the exponent relation f(τ)−y = q(τ)(τ−z) directly. A real verifier '
+  + 'enforces the same relation with a bilinear pairing e(C·g⁻ʸ, g) = e(π, g^(τ−z)) '
+  + 'over the group elements C and π alone — never touching τ. No pairing is computed here.';
+
+/**
  * The verifier's pairing equation  e(C·g^-y, g) = e(π, g^τ·g^-z)  enforces, in
  * the exponent,  f(τ) - y = q(τ)·(τ - z).  A real verifier checks this with a
  * bilinear pairing using only C, π and the SRS — never τ. We surface the
- * exponent equality it enforces so you can see exactly what is being checked.
+ * exponent equality it enforces so you can see exactly what is being checked;
+ * see PAIRING_NOTE for the honest scope of this model.
  */
 export function kzgVerify(commitExp: number, y: number, proofExp: number, tau: number, z: number): VerifyResult {
   const lhs = Fr.sub(commitExp, y);

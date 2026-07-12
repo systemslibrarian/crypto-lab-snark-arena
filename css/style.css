@@ -463,6 +463,15 @@ button { font-family: var(--mono); font-size: 12px; padding: 10px 15px; border-r
 .calc-box.cb-ok { border-color: rgba(52, 211, 153, 0.4); }
 .calc-box.cb-bad { border-color: rgba(248, 113, 113, 0.45); }
 .calc-line { margin: 4px 0; }
+.calc-note {
+  margin: 9px 0 2px;
+  padding: 7px 10px;
+  font-family: var(--font, inherit);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--tx2);
+  border-left: 2px solid var(--acc2);
+}
 .calc-line strong { color: var(--acc2); }
 .calc-verdict { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--bord); font-weight: 700; }
 .calc-verdict.pv-ok { color: var(--ok); }

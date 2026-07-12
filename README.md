@@ -41,7 +41,9 @@ Six exhibits, a glossary, and a self-check quiz walk from what a zk-SNARK is —
 git clone https://github.com/systemslibrarian/crypto-lab-snark-arena
 cd crypto-lab-snark-arena
 npm install
-npm run dev
+npm run dev      # dev server
+npm test         # crypto-core unit tests (Vitest)
+npm run build && npm run test:a11y   # production build + WCAG a11y gate
 ```
 
 ## Related Demos
@@ -64,7 +66,9 @@ npm run dev
 
 ## Real math, not mock-ups
 
-The interactive panels run genuine finite-field arithmetic in the browser (`src/crypto/`): the R1CS witness check, modular inverse/exponentiation, polynomial division, the powers-of-tau SRS, and KZG commit/open/verify. The numbers use a toy-sized field (`F₁₇`, group order 17 encoded mod 103) so every value is small enough to verify by hand; real systems use the same constructions on 254-bit curves. The cryptographic core has no UI dependencies and is unit-testable in isolation.
+The interactive panels run genuine finite-field arithmetic in the browser (`src/crypto/`): the R1CS witness check, modular inverse/exponentiation, polynomial division, the powers-of-tau SRS, and KZG commit/open/verify. The numbers use a toy-sized field (`F₁₇`, group order 17 encoded mod 103) so every value is small enough to verify by hand; real systems use the same constructions on 254-bit curves. The cryptographic core has no UI dependencies and is unit-tested in isolation: `npm test` runs 37 Vitest cases (`src/crypto/*.test.ts`) — field KATs and homomorphism/Fermat properties, the powers-of-tau product and SRS encodings, KZG commit/open/verify round-trips, verify-rejects-a-lie, the leaked-`τ` forgery, and the R1CS witness catching a forged wire.
+
+**On the verify step specifically:** a real KZG verifier checks the bilinear pairing `e(C·g⁻ʸ, g) = e(π, g^(τ−z))` over the group elements `C` and `π` alone, never touching `τ`. This demo has no pairing on its toy group, so `kzgVerify` tests the *same* algebraic relation the pairing enforces — the exponent equality `f(τ)−y = q(τ)(τ−z)` — by reading the exponents directly (including `τ`). It faithfully models *what* the pairing verifies, not *how*; that scope limit is now stated in-app at the verify step (via `PAIRING_NOTE`), not only in code comments.
 
 The **Real proof** panel goes one step further and runs the *production* stack — `snarkjs.groth16.fullProve` / `verify` on a circom-compiled circuit and a real trusted-setup proving key — entirely client-side. The Groth16/PLONK proof-size and timing figures in Exhibits 02–04 remain illustrative (labeled "simulated") and follow snarkjs benchmark conventions.
 

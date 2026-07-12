@@ -5,7 +5,7 @@
 import { polyEval, polyToString, Field } from '../crypto/field';
 import {
   powersOfTau, kzgCommit, kzgOpen, kzgVerify, forgeOpening,
-  SCALAR_R, type SrsElement, type CommitResult,
+  SCALAR_R, PAIRING_NOTE, type SrsElement, type CommitResult,
 } from '../crypto/setup';
 
 // A fixed demo polynomial and evaluation point over F_17, with a leaked τ.
@@ -50,6 +50,7 @@ export function initKzg(): void {
       <div class="calc-line">Quotient q(x) = (f(x) − ${Y_TRUE}) / (x − ${Z}) = ${polyToString(open.quotient)} &nbsp; <span class="muted">remainder ${open.remainder}</span></div>
       <div class="calc-line">Proof π = g<sup>q(τ)</sup> = g<sup>${open.proofExp}</sup> = ${open.proofElement} &nbsp;<span class="muted">(built from the SRS)</span></div>
       <div class="calc-line">Pairing check enforces: f(τ) − y = q(τ)·(τ − z) → ${v.lhs} = ${v.rhs}</div>
+      <div class="calc-note">${PAIRING_NOTE}</div>
       <div class="calc-verdict pv-ok">✓ Accepted — the remainder is 0, so an honest proof exists and verifies.</div>`;
   });
 
@@ -61,6 +62,7 @@ export function initKzg(): void {
       <div class="calc-line"><span class="muted">Honest route —</span> q(x) = (f(x) − ${Y_LIE}) / (x − ${Z}) leaves <strong>remainder ${fg.honest.remainder} ≠ 0</strong>: not a polynomial, so it can't be built from the SRS. An honest prover is stuck. ✗</div>
       <div class="calc-line forge-leak-line"><span class="muted">Attacker route, knowing τ = ${TAU} —</span> divide in the exponent directly: π = g<sup>(f(τ) − ${Y_LIE})/(τ − ${Z})</sup> = g<sup>${fg.forgedProofExp}</sup> = ${fg.forgedProofElement}</div>
       <div class="calc-line">Pairing check: f(τ) − y = q(τ)·(τ − z) → ${fg.verify.lhs} = ${fg.verify.rhs}</div>
+      <div class="calc-note">${PAIRING_NOTE}</div>
       <div class="calc-verdict pv-bad">✗ Soundness broken — the forged proof is <strong>accepted</strong>. The leaked τ let the attacker satisfy the verifier's equation for a false statement.</div>`;
   });
 }
