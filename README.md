@@ -2,16 +2,16 @@
 
 ## What It Is
 
-SNARK Arena demonstrates the two most deployed zk-SNARK proving systems: Groth16 (Groth, EUROCRYPT 2016) and PLONK (Gabizon et al., 2019). Both are succinct non-interactive arguments of knowledge: they prove knowledge of a secret witness satisfying a circuit without revealing the witness, in proofs small enough to verify in milliseconds. Groth16 produces 128-byte proofs with per-circuit trusted setup. PLONK produces approximately 400-byte proofs with a universal trusted setup reusable across circuits. Both rely on pairing-based assumptions and are not post-quantum secure.
+SNARK Arena demonstrates the two most deployed zk-SNARK proving systems: Groth16 (Groth, EUROCRYPT 2016) and PLONK (Gabizon et al., 2019). Both are succinct non-interactive arguments of knowledge: they prove knowledge of a secret witness satisfying a circuit without revealing the witness, in proofs small enough to verify in milliseconds. Groth16 produces 128-byte proofs on BN254 with per-circuit trusted setup — that is the compressed encoding; the same three group elements are 256 bytes uncompressed, which is what snarkjs writes and what the live-proof panel reports. PLONK produces approximately 400-byte proofs with a universal trusted setup reusable across circuits. Both rely on pairing-based assumptions and are not post-quantum secure.
 
 ## When to Use It
 
 - ✅ Groth16: fixed circuits requiring minimal proof size and fastest verification, such as Zcash and Semaphore-style deployments where proof bytes matter.
 - ✅ PLONK: circuits that evolve or where avoiding a new per-circuit ceremony is important, such as Aztec and Polygon zkEVM style workflows.
-- ✅ Halo2 (PLONK variant): when recursive proof composition or no trusted setup is needed.
+- ✅ Halo2 (PLONK variant): when recursive proof composition or no trusted setup is needed — but "no trusted setup" is a property of the IPA backend that upstream (Zcash) halo2 uses, not of halo2 as such. The PSE fork swaps IPA for KZG for cheaper L1 verification, and KZG needs a ceremony.
 - ❌ Neither Groth16 nor PLONK is post-quantum secure; use STARK systems for long-term quantum resistance targets.
 - ❌ Do not deploy without a multi-party trusted setup ceremony when a setup is required; a single-party setup is equivalent to no setup trust model.
-- ❌ Do not treat this as production proving infrastructure — it is a teaching demo, and the interactive panels use a toy field (real systems use 254-bit curves and audited libraries).
+- ❌ Do not treat this as production proving infrastructure — it is a teaching demo, and the interactive panels use toy fields — `F₈₁₉₁` in the R1CS playground, `F₁₇` in the ceremony and KZG exhibits (real systems use 254-bit curves and audited libraries).
 
 ## Live Demo
 
@@ -25,7 +25,7 @@ Six exhibits, a glossary, and a self-check quiz walk from what a zk-SNARK is —
 - **Single-party setup** — a one-participant ceremony is no better than no setup; soundness requires a multi-party ceremony where at least one honest participant destroys their contribution.
 - **Not post-quantum** — Groth16 and PLONK rest on pairing-based assumptions and fall to a quantum adversary; use STARKs where long-term quantum resistance is required.
 - **Under-constrained circuits** — a circuit that fails to constrain a wire lets a prover satisfy it with forged values; soundness depends on the circuit, not just the proof system.
-- **Toy-field intuition** — the interactive panels use a small field (`F₁₇`) so values verify by hand; real deployments need 254-bit curves, and the demo's proof-size/timing figures in Exhibits 02–04 are labeled illustrative.
+- **Toy-field intuition** — the interactive panels use small fields so values verify by hand, and there is more than one: the R1CS circuit playground runs over `F₈₁₉₁` (2¹³ − 1), while the powers-of-tau ceremony and KZG-forgery exhibits use `F₁₇`. Both are toy and both are labeled in-app; real deployments need 254-bit curves, and the demo's proof-size/timing figures in Exhibits 02–04 are labeled illustrative.
 
 ## Real-World Usage
 

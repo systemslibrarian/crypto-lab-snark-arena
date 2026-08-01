@@ -237,7 +237,7 @@
           </div>
         </div>
         <div class="vl"><strong>Why this matters:</strong> the gap between "toy demo" and "production zk" is mostly artifact size and ceremony rigor, not architecture. The same three calls — compile, prove, verify — scale from this 3-constraint circuit to Zcash's millions.</div>
-        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Real client-side SNARKs need no server — only static artifacts. The proof is ~256 bytes and verifies in milliseconds, no matter how large the circuit.</div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Real client-side SNARKs need no server — only static artifacts. The proof above is <strong>256 bytes uncompressed</strong> — the serialization snarkjs emits, three BN254 group elements at 32 bytes per coordinate. Compressed to one coordinate plus a sign bit per element it is the <strong>128 bytes</strong> quoted in Exhibit 02. Same proof, two encodings. Either way it verifies in milliseconds no matter how large the circuit.</div>
       </section>
 
       <!-- ════════════════ EXHIBIT 02 ════════════════ -->
@@ -248,7 +248,7 @@
         <div class="prose">
           <p>Groth16 is a pairing-based SNARK over curves like BN254 and BLS12-381 using QAP-style encodings (Groth, EUROCRYPT 2016).</p>
           <p>Setup has Powers of Tau plus a circuit-specific phase 2 that emits proving key and verification key.</p>
-          <p>Proof has three group elements (A, B, C). On BN254 this is 128 bytes; on BLS12-381 this is 192 bytes.</p>
+          <p>Proof has three group elements (A, B, C). Sizes below are <strong>compressed</strong> — one field coordinate plus a sign bit per element. On BN254 this is 128 bytes; on BLS12-381 this is 192 bytes. Uncompressed (both coordinates, which is what snarkjs writes and what the featured live-proof panel reports) BN254 is 256 bytes.</p>
         </div>
         <div class="demo-grid">
           <div class="panel">
@@ -267,7 +267,7 @@
               <p>Constraint count: 2</p>
               <p>Proving key size: 42 KB (simulated educational profile)</p>
               <p>Verification key size: 1.6 KB (simulated educational profile)</p>
-              <p>Proof size: <strong>128 bytes (BN254)</strong></p>
+              <p>Proof size: <strong>128 bytes (BN254, compressed)</strong> &mdash; 256 bytes uncompressed</p>
               <p>Proof bytes (hex, truncated): <span id="groth16-proof-hex" class="hash-box"></span></p>
               <p>Verification time: <span id="groth16-time">1.4 ms</span></p>
               <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> Proof bytes are random for visualization; sizes/timings follow snarkjs benchmark conventions.</div>
@@ -287,7 +287,7 @@
             </div>
             <p id="groth16-chain-status" class="hint" role="status" aria-live="polite">Security holds if at least one participant destroys toxic waste.</p>
             <div class="vl" style="margin-top:10px"><strong>One honest participant:</strong> the ceremony is secure if even one participant honestly deletes their randomness. No one can retroactively extract another participant's contribution from the final SRS. <a href="#exhibit-5">See the real math in Exhibit 05 ↓</a></div>
-            <p class="hint">Examples: Zcash Sapling (88 participants, 2018), Hermez (214 participants, 2021), Semaphore (open participation, thousands of contributors).</p>
+            <p class="hint">Examples: Zcash&rsquo;s two-phase ceremony — Powers of Tau (phase 1, 87 contributions, Nov 2017&ndash;Apr 2018) followed by the Sapling MPC (phase 2, over 90 contributions, May&ndash;Aug 2018); Hermez (214 participants, 2021); Semaphore (open participation, thousands of contributors).</p>
           </div>
         </div>
         <div class="vl">
@@ -347,7 +347,7 @@
             <p>PLONK (original): KZG commitments.</p>
             <p>TurboPlonk: custom gates (Aztec).</p>
             <p>UltraPlonk: lookups and richer gate systems.</p>
-            <p>Halo2: no trusted setup via IPA commitments, used in Zcash Orchard and Scroll proving systems.</p>
+            <p>Halo2: the commitment scheme is a build choice, and it decides whether there is a setup. Upstream (Zcash) halo2 uses IPA and needs <em>no</em> trusted setup — that is what Zcash Orchard ships. The Privacy &amp; Scaling Explorations fork &ldquo;swapped the original IPA backend with KZG for cost-effective Ethereum L1 verifiability&rdquo;, and KZG <em>does</em> require a structured reference string from a ceremony; Scroll&rsquo;s zkEVM was built on that KZG fork, so it is not a no-setup system. (Scroll has since moved its proving to OpenVM.)</p>
           </div>
         </div>
         <div class="vl">
@@ -366,7 +366,7 @@
             <h3 class="ph">Groth16: x² = y</h3>
             <div class="pb">
               <p>Proof bytes: <span id="head-groth16" class="hash-box"></span></p>
-              <p>Proof size: 128 bytes (BN254)</p>
+              <p>Proof size: 128 bytes (BN254, compressed)</p>
               <p>Verification time: 1.5 ms</p>
               <p>Setup type: per-circuit</p>
             </div>
@@ -392,7 +392,7 @@
               </thead>
               <tbody>
                 <tr><th scope="row">Setup type</th><td>Per-circuit</td><td>Universal (once)</td></tr>
-                <tr><th scope="row">Proof size</th><td>128 bytes (BN254)</td><td>~400-500 bytes</td></tr>
+                <tr><th scope="row">Proof size</th><td>128 bytes (BN254, compressed; 256 uncompressed)</td><td>~400-500 bytes</td></tr>
                 <tr><th scope="row">Verification time</th><td>~1-2ms</td><td>~3-5ms</td></tr>
                 <tr><th scope="row">Proving time</th><td>Fast</td><td>Slightly slower</td></tr>
                 <tr><th scope="row">Circuit language</th><td>R1CS / circom</td><td>PLONKish / Halo2</td></tr>
@@ -467,7 +467,7 @@
           <h3 class="ph">Ceremony Timeline</h3>
           <div class="pb">
             <p>Zcash Sprout (2016): 6 collocated participants.</p>
-            <p>Zcash Sapling (2018): 88 participants over 6 weeks.</p>
+            <p>Zcash Sapling: two phases, not one. Powers of Tau (phase 1, circuit-independent) accepted <strong>87 contributions</strong> between November 2017 and April 2018; the Sapling MPC (phase 2, circuit-specific) accepted <strong>over 90 contributions</strong> from May to early August 2018.</p>
             <p>Hermez 1.0 (2021): 214 participants.</p>
             <p>Semaphore: open participation, thousands of contributors.</p>
             <p>Ethereum KZG Ceremony for EIP-4844 (2023): approximately 141,000 contributors.</p>
