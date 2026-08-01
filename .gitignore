@@ -4,3 +4,5 @@ zkbuild/
 /test-results/
 /playwright-report/
 /.pw-browsers/
+
+.DS_Store
