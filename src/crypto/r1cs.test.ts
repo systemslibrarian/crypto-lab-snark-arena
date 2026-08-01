@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  evaluateWitness, R1CS_PRIME, WIRES, PUBLIC_OUT, CONSTRAINTS,
+  evaluateWitness, satisfyingWitnesses, R1CS_PRIME, WIRES, PUBLIC_OUT, CONSTRAINTS,
 } from './r1cs';
 
 describe('R1CS circuit x^3 + x + 5 = 35', () => {
@@ -39,6 +39,29 @@ describe('R1CS circuit x^3 + x + 5 = 35', () => {
     // ...but the multiplication gate v1 · x = v2 catches the forged v2.
     expect(r.results[1].holds).toBe(false); // C2: v1·x = v2
     expect(r.satisfied).toBe(false);
+  });
+
+  // Regression: the playground used to end its failure verdict with the fixed
+  // string "Only x = 3 works." That is true over the integers and false over
+  // F_8191, the field the panel actually computes in. The sentence is now built
+  // from this enumeration, so if the field or the public output ever changes the
+  // page follows.
+  it('has three satisfying witnesses over F_8191, not one', () => {
+    const roots = satisfyingWitnesses();
+    expect(roots).toEqual([3, 3527, 4661]);
+  });
+
+  it('every enumerated root really satisfies all three constraints', () => {
+    for (const x of satisfyingWitnesses()) {
+      const r = evaluateWitness(x);
+      expect(r.satisfied).toBe(true);
+      expect(r.computedOut).toBe(PUBLIC_OUT);
+    }
+  });
+
+  it('only one satisfying witness is reachable from the slider range 0..9', () => {
+    const reachable = satisfyingWitnesses().filter((x) => x <= 9);
+    expect(reachable).toEqual([3]);
   });
 
   it('every constraint enforces (A·s)(B·s) = (C·s) exactly', () => {

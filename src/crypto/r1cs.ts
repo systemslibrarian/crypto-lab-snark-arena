@@ -52,6 +52,25 @@ export interface WitnessReport {
 }
 
 /**
+ * Every x in F_p that satisfies the circuit, found by enumerating the field.
+ *
+ * This matters pedagogically: over the integers x³ + x + 5 = 35 has the single
+ * root x = 3, but the circuit is defined over F_8191, where the cubic has three
+ * roots. The playground slider only reaches 9, so a learner never sees the other
+ * two — which is exactly how "only x = 3 works" gets asserted about a finite
+ * field it is not true of. The panel now prints this list instead of a constant.
+ */
+export function satisfyingWitnesses(): number[] {
+  const F = new Field(R1CS_PRIME);
+  const roots: number[] = [];
+  for (let x = 0; x < R1CS_PRIME; x += 1) {
+    const out = F.add(F.add(F.mul(F.mul(x, x), x), x), 5);
+    if (out === PUBLIC_OUT) roots.push(x);
+  }
+  return roots;
+}
+
+/**
  * Build the witness for a given secret x and evaluate every constraint against
  * the FIXED public output (35). `forgedV2`, if provided, replaces the honest v2
  * wire — used to demonstrate that a multiplication gate catches a cheating

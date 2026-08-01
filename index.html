@@ -224,7 +224,7 @@
         <div class="vl">
           <strong>Why this matters:</strong> zk-SNARKs underpin Zcash private transfers, zkEVM rollups, zkLogin, Semaphore identity proofs, and anonymous credential systems. For foundational Schnorr, Fiat-Shamir, and commitment mechanics, see <a href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab</a>.
         </div>
-        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> A proof is "I have a witness that satisfies every constraint." The multiplication gates pin the intermediate wires; the public wire pins the answer. Only <span class="mono-inline">x = 3</span> satisfies all three.</div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> A proof is "I have a witness that satisfies every constraint." The multiplication gates pin the intermediate wires; the public wire pins the answer. <span id="play-roots">The satisfying witnesses are enumerated from the field when this panel loads.</span></div>
       </section>
 
       <!-- ════════════════ FEATURED: REAL PROOF ════════════════ -->
@@ -233,7 +233,8 @@
         <h2 class="ex-title" id="rp-title">Now Prove It For Real</h2>
         <p class="objective"><strong>You'll learn:</strong> that none of this is hand-waving. Here is a <em>genuine</em> Groth16 proof of the exact same circuit, generated and verified entirely in your browser with <a href="https://github.com/iden3/snarkjs" target="_blank" rel="noopener noreferrer">snarkjs</a> — no server, no simulation.</p>
         <div class="prose">
-          <p>The playground above used a toy field so you could read every number. This panel runs the production stack on the same statement <span class="mono-inline">x³ + x + 5 = out</span>: a <a href="zk/cubic.circom" target="_blank" rel="noopener noreferrer">circom circuit</a> compiled to a witness generator, proven over the BN254 curve using a real powers-of-tau + phase-2 trusted setup.</p>
+          <p>The playground above used a toy field so you could read every number. This panel runs the production stack on the same statement <span class="mono-inline">x³ + x + 5 = out</span>: a <a href="zk/cubic.circom" target="_blank" rel="noopener noreferrer">circom circuit</a> compiled to a witness generator, proven over the BN254 curve using proving and verification keys from a genuine two-phase <span class="mono-inline">snarkjs</span> setup &mdash; run locally, once, by this repo's maintainer.</p>
+          <p><strong>The setup is real; the ceremony is not.</strong> Powers of Tau and phase 2 each took exactly one contribution, and both entropy strings are published in the repo README (<span class="mono-inline">-e="random"</span> and <span class="mono-inline">-e="random2"</span>). By the rule Exhibit 05 and the quiz below both teach &mdash; security needs at least one participant who destroys their toxic waste &mdash; that makes the toxic waste for these artifacts effectively public. The proving and verifying you do here are real Groth16; the <em>soundness</em> of these particular keys is worth nothing, and a production deployment would use a multi-party ceremony instead.</p>
           <p>The artifacts — the witness-generator WASM (34 KB), the proving key (3.6 KB), and the verification key — are <strong>static files shipped with the page</strong>. That is precisely why a real SNARK works on GitHub Pages with no backend: proving and verifying are pure client-side computation.</p>
         </div>
         <div class="panel" id="realproof" aria-labelledby="rp-panel-h">
@@ -251,7 +252,7 @@
               <button class="bs" id="rp-tamper" type="button">Tamper &amp; verify</button>
             </div>
             <div id="rp-out" class="calc-box" aria-live="polite"></div>
-            <div class="trust-banner trust-real"><strong>Not simulated:</strong> <span class="mono-inline">snarkjs.groth16.fullProve</span> runs the real proving algorithm on the WASM witness generator and a proving key from an actual ceremony. It runs single-threaded — GitHub Pages can't send the COOP/COEP headers that multi-threaded WASM needs — which is still plenty fast for a circuit this size.</div>
+            <div class="trust-banner trust-real"><strong>Not simulated:</strong> <span class="mono-inline">snarkjs.groth16.fullProve</span> runs the real proving algorithm on the WASM witness generator and a proving key from a real local <span class="mono-inline">snarkjs</span> setup &mdash; one phase-1 and one phase-2 contribution, both with entropy published in the README, so treat τ as known and these keys as unsound by construction. It runs single-threaded — GitHub Pages can't send the COOP/COEP headers that multi-threaded WASM needs — which is still plenty fast for a circuit this size.</div>
           </div>
         </div>
         <div class="vl"><strong>Why this matters:</strong> the gap between "toy demo" and "production zk" is mostly artifact size and ceremony rigor, not architecture. The same three calls — compile, prove, verify — scale from this 3-constraint circuit to Zcash's millions.</div>
@@ -287,12 +288,8 @@
               <p>Verification key size: 1.6 KB (simulated educational profile)</p>
               <p>Proof size: <strong>128 bytes (BN254, compressed)</strong> &mdash; 256 bytes uncompressed</p>
               <p>Proof bytes (hex, truncated): <span id="groth16-proof-hex" class="hash-box"></span></p>
-              <p>Verification time: <span id="groth16-time">1.4 ms</span></p>
-              <div class="trust-banner trust-conceptual"><strong>Simulated:</strong> Proof bytes are random for visualization; sizes/timings follow snarkjs benchmark conventions.</div>
-              <div class="controls">
-                <button class="bp" id="groth16-verify">Verify proof</button>
-              </div>
-              <div id="groth16-result" class="hash-label" role="status" aria-live="polite">Awaiting verification...</div>
+              <p>Verification time: <span id="groth16-time">~1.4 ms</span> <span class="muted">(published snarkjs BN254 figure &mdash; not measured in this panel)</span></p>
+              <div class="trust-banner trust-conceptual"><strong>Nothing is computed in this panel.</strong> The proof bytes are random filler for visualization, and the sizes and timing are published snarkjs benchmark figures for a circuit this size. There is no proof object here to verify, so this panel has no Verify button. For a real measurement, use <a href="#exhibit-realproof">Now Prove It For Real</a> &mdash; it generates a genuine BN254 proof and prints whatever <span class="mono-inline">groth16.verify</span> returns.</div>
             </div>
           </div>
         </div>
@@ -339,11 +336,8 @@
             <div class="pb">
               <p>Proof size: <strong>448 bytes</strong></p>
               <p>Proof bytes (hex, truncated): <span id="plonk-proof-hex" class="hash-box"></span></p>
-              <p>Verification time: <span id="plonk-time">3.8 ms</span></p>
-              <div class="controls">
-                <button class="bp" id="plonk-verify">Verify proof</button>
-              </div>
-              <div id="plonk-result" class="hash-label" role="status" aria-live="polite">Awaiting verification...</div>
+              <p>Verification time: <span id="plonk-time">~3.8 ms</span> <span class="muted">(published snarkjs figure &mdash; not measured in this panel)</span></p>
+              <div class="trust-banner trust-conceptual"><strong>Nothing is computed in this panel.</strong> This build ships no PLONK circuit artifacts, so no PLONK proof exists in your browser; the hex is random filler and the figures are published benchmark numbers. The only live proving and verifying on this page is Groth16, in <a href="#exhibit-realproof">Now Prove It For Real</a>.</div>
             </div>
           </div>
         </div>

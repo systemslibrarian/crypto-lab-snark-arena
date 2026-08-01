@@ -4,6 +4,7 @@ import { initCeremony } from './ui/ceremony';
 import { initKzg } from './ui/kzg';
 import { initQuiz } from './ui/quiz';
 import { initNav } from './ui/nav';
+import { runCeremony, SCALAR_R } from './crypto/setup';
 
 function initThemeToggle() {
   const root = document.documentElement;
@@ -61,29 +62,16 @@ function showProofHexes() {
   }
 }
 
-function bindVerificationButtons() {
-  const grothBtn = document.getElementById('groth16-verify');
-  const grothResult = document.getElementById('groth16-result');
-  const grothTime = document.getElementById('groth16-time');
+// NOTE: Exhibits 02 and 03 used to carry "Verify proof" buttons that printed
+// "✓ Verified (simulated verifier path, N ms)" with N = Math.random(). No proof
+// object existed in either panel, so nothing was verified and nothing was timed.
+// Both buttons are gone. The comparison figures those panels quote are now
+// labelled as published benchmark numbers, and the only verification affordance
+// on the page is the featured panel, which runs snarkjs against real artifacts
+// and prints whatever groth16.verify actually returned.
 
-  grothBtn?.addEventListener('click', () => {
-    const ms = (1 + Math.random()).toFixed(2);
-    if (grothTime) grothTime.textContent = `${ms} ms`;
-    if (grothResult) grothResult.textContent = `✓ Verified (simulated verifier path, ${ms} ms)`;
-  });
-
-  const plonkBtn = document.getElementById('plonk-verify');
-  const plonkResult = document.getElementById('plonk-result');
-  const plonkTime = document.getElementById('plonk-time');
-
-  plonkBtn?.addEventListener('click', () => {
-    const ms = (3 + Math.random() * 2).toFixed(2);
-    if (plonkTime) plonkTime.textContent = `${ms} ms`;
-    if (plonkResult) plonkResult.textContent = `✓ Verified (simulated verifier path, ${ms} ms)`;
-  });
-}
-
-// The legacy Groth16 ceremony animation in Exhibit 02 (illustrative, no math).
+// The Groth16 ceremony animation in Exhibit 02. The safe/compromised outcome is
+// computed by runCeremony() from per-participant deletion draws, not asserted.
 function buildChain(containerId: string) {
   const container = document.getElementById(containerId);
   if (!container) {
@@ -153,12 +141,27 @@ function bindLegacyCeremony() {
   const grothStatus = document.getElementById('groth16-chain-status');
 
   grothRun?.addEventListener('click', () => {
-    const statuses: Array<'safe' | 'bad'> = grothNodes.map((_, i) => (i < 4 ? 'safe' : 'bad'));
-    const labels = grothNodes.map((_, i) => (i < 4 ? `P${i + 1} ✓ deleted waste` : `P${i + 1} kept waste`));
+    // Draw a real contribution and an independent honesty coin for each
+    // participant, then let runCeremony() decide the outcome. Every run of five
+    // dishonest participants (1 in 32) genuinely reports a compromised ceremony,
+    // which is what makes "at least one honest participant" a claim and not a
+    // decoration.
+    const contributions = grothNodes.map(() => 1 + Math.floor(Math.random() * (SCALAR_R - 1)));
+    const deletedFlags = grothNodes.map(() => Math.random() < 0.75);
+    const report = runCeremony(contributions, deletedFlags);
+
+    const statuses: Array<'safe' | 'bad'> = report.steps.map((s) => (s.deleted ? 'safe' : 'bad'));
+    const labels = report.steps.map(
+      (s) => `P${s.index + 1} ${s.deleted ? '✓ deleted waste' : '✗ kept waste'}`,
+    );
     if (grothStatus) grothStatus.textContent = 'Running ceremony…';
     const btns = [grothRun].filter(Boolean) as HTMLElement[];
     animateChain(grothNodes, statuses, labels, btns, () => {
-      if (grothStatus) grothStatus.textContent = 'Secure: at least one honest participant destroyed toxic waste. Ceremony is safe.';
+      if (!grothStatus) return;
+      const honest = report.steps.filter((s) => s.deleted).length;
+      grothStatus.textContent = report.secure
+        ? `Secure: ${honest} of ${report.steps.length} participants destroyed their toxic waste, so the combined τ is unrecoverable. Ceremony is safe.`
+        : `Compromised: all ${report.steps.length} participants kept their factor, so colluding they can reconstruct τ = ${report.finalTau}. Soundness is broken — run it again.`;
     });
   });
 }
@@ -167,7 +170,6 @@ function init() {
   initThemeToggle();
   initNav();
   showProofHexes();
-  bindVerificationButtons();
   bindLegacyCeremony();
   initPlayground();
   initRealProof();

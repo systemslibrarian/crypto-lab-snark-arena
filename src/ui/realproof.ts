@@ -12,7 +12,22 @@ const SNARKJS_URL = `${BASE}vendor/snarkjs.min.js`;
 
 // Groth16 on BN254: A (G1, 2×32B) + B (G2, 4×32B) + C (G1, 2×32B) = 256 bytes
 // uncompressed; 128 bytes compressed. Constant regardless of circuit size.
-const PROOF_BYTES = 256;
+//
+// The panel used to print the 256 literal beside a genuinely measured proving
+// time, which reads as a measurement of the object on screen. Count the field
+// elements in the proof snarkjs actually returned instead: snarkjs appends a
+// projective coordinate (pi_a[2], pi_b[2]) that is not serialized, so the
+// affine element count is what determines the wire size.
+const FIELD_ELEMENT_BYTES = 32; // one BN254 base-field coordinate
+
+function uncompressedProofBytes(proof: { pi_a: unknown[]; pi_b: unknown[][]; pi_c: unknown[] }): number {
+  // G1 points are [x, y, z]; G2 points are [[x0,x1],[y0,y1],[z0,z1]]. Drop the
+  // trailing projective coordinate and count the remaining base-field entries.
+  const g1 = (pt: unknown[]) => pt.length - 1;
+  const g2 = (pt: unknown[][]) => (pt.length - 1) * pt[0].length;
+  const coords = g1(proof.pi_a) + g2(proof.pi_b) + g1(proof.pi_c);
+  return coords * FIELD_ELEMENT_BYTES;
+}
 
 interface ProofState { proof: any; publicSignals: string[]; }
 
@@ -85,11 +100,12 @@ export function initRealProof(): void {
         throw new Error('unexpected proof shape');
       }
       last = { proof, publicSignals };
+      const proofBytes = uncompressedProofBytes(proof);
       out.className = 'calc-box cb-ok';
       out.innerHTML = `
         <div class="calc-line"><strong>Proof generated in ${ms} ms</strong> — a genuine Groth16 proof on BN254.</div>
         <div class="calc-line">Public output the proof commits to: <strong>out = ${publicSignals[0]}</strong> &nbsp;<span class="muted">(x stays secret)</span></div>
-        <div class="calc-line">Proof size: <strong>${PROOF_BYTES} bytes</strong> (A, B, C group elements), independent of circuit size.</div>
+        <div class="calc-line">Proof size: <strong>${proofBytes} bytes</strong> &mdash; counted from the proof object above (${proofBytes / FIELD_ELEMENT_BYTES} BN254 base-field coordinates &times; ${FIELD_ELEMENT_BYTES} B, uncompressed), independent of circuit size.</div>
         <div class="rp-proof"><div class="muted">proof.A (G1):</div>${fmtPt(proof.pi_a)}<div class="muted">proof.B (G2):</div>${fmtPt(proof.pi_b)}<div class="muted">proof.C (G1):</div>${fmtPt(proof.pi_c)}</div>
         <div class="calc-line">Now verify it against the verification key — or tamper with the public output and watch it fail.</div>`;
       lockVerify(false);

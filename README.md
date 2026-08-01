@@ -76,6 +76,8 @@ The **Real proof** panel goes one step further and runs the *production* stack �
 
 A real SNARK needs no server: proving and verifying are pure client-side computation. The circuit artifacts are generated once at build time and shipped as static files in `public/zk/` (witness-generator WASM, proving key, verification key), with snarkjs vendored in `public/vendor/`. The only real constraint is that GitHub Pages can't send the COOP/COEP headers needed for multi-threaded WASM, so proving runs single-threaded — fine for small-to-medium circuits; large circuits (hundreds-of-MB proving keys) hit the 100 MB per-file limit.
 
+**On the trust in those artifacts.** The setup below is a real two-phase snarkjs setup, but it is not a ceremony: phase 1 and phase 2 each took exactly one contribution, and both entropy strings are published right here in this file. By the demo's own rule — security needs at least one participant who destroys their toxic waste — the toxic waste for these keys is effectively public, so they are sound for nobody. The proving and verifying the page performs are genuine Groth16; the soundness of these particular keys is worth nothing. The page says so too, in the featured panel and its trust banner.
+
 To regenerate the artifacts (requires the [circom](https://github.com/iden3/circom) compiler):
 
 ```bash

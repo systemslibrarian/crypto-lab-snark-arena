@@ -49,15 +49,11 @@ async function driveDemos(page: Page): Promise<void> {
   await page.locator('#play-cheat').click();
   await expect(page.locator('#play-constraints')).not.toBeEmpty();
 
-  // Exhibit 02 — simulated Groth16 verify + legacy ceremony animation.
-  await page.locator('#groth16-verify').click();
-  await expect(page.locator('#groth16-result')).toContainText('Verified');
+  // Exhibit 02 — ceremony animation. The old "Verify proof" buttons in Exhibits
+  // 02 and 03 printed "✓ Verified" and a Math.random() timing for a proof object
+  // that never existed; both were removed, so the chain is all there is to drive.
   await page.locator('#groth16-chain-run').click();
   await expect(page.locator('#groth16-chain .chain-node').first()).toBeVisible();
-
-  // Exhibit 03 — simulated PLONK verify.
-  await page.locator('#plonk-verify').click();
-  await expect(page.locator('#plonk-result')).toContainText('Verified');
 
   // Exhibit 05 — real ceremony arithmetic + KZG forgery (both honest and lie).
   await page.locator('#ceremony-run').click();

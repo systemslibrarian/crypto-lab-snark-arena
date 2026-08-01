@@ -1,9 +1,27 @@
 // Interactive R1CS circuit playground. Renders the live witness vector and the
 // three constraint checks for x^3 + x + 5 = 35 as the user drags the secret x.
 
-import { evaluateWitness, WIRES, PUBLIC_OUT, R1CS_PRIME, type WitnessReport } from '../crypto/r1cs';
+import {
+  evaluateWitness, satisfyingWitnesses, WIRES, PUBLIC_OUT, R1CS_PRIME, type WitnessReport,
+} from '../crypto/r1cs';
 
 const FORGED_V2 = 99; // an obviously-wrong intermediate wire for the cheat demo
+
+// Enumerated once from the field itself, never hardcoded. Over F_8191 the cubic
+// has more than the one integer root, and the slider's 0..9 range hides that.
+const ROOTS = satisfyingWitnesses();
+
+function rootsSentence(): string {
+  const inRange = ROOTS.filter((r) => r <= 9);
+  const list = ROOTS.join(', ');
+  if (ROOTS.length === 1) {
+    return `Exactly one field element satisfies the circuit: x = ${list}.`;
+  }
+  return `${ROOTS.length} field elements satisfy the circuit over F<sub>${R1CS_PRIME}</sub>: `
+    + `<strong>${list}</strong>. The slider only reaches 9, so ${inRange.join(' and ')} `
+    + `${inRange.length === 1 ? 'is the only one' : 'are the only ones'} you can dial in — `
+    + 'but "only x = 3" is a statement about the integers, not about this field.';
+}
 
 function renderWitness(host: HTMLElement, report: WitnessReport, cheating: boolean): void {
   const cells = report.witness
@@ -49,7 +67,7 @@ function renderVerdict(host: HTMLElement, report: WitnessReport, cheating: boole
     host.innerHTML = `<strong>✗ Caught cheating.</strong> Forcing v2 = ${FORGED_V2} breaks constraint <strong>${failed.constraint.label}</strong> (${failed.constraint.human}). A multiplication gate can't be faked — the prover is rejected.`;
     return;
   }
-  host.innerHTML = `<strong>✗ Not a satisfying witness.</strong> The multiplication wires are consistent, but x = ${report.x} gives x³ + x + 5 = ${report.computedOut}, so constraint <strong>${failed.constraint.label}</strong> can't equal the public output ${PUBLIC_OUT}. Only x = 3 works.`;
+  host.innerHTML = `<strong>✗ Not a satisfying witness.</strong> The multiplication wires are consistent, but x = ${report.x} gives x³ + x + 5 = ${report.computedOut}, so constraint <strong>${failed.constraint.label}</strong> can't equal the public output ${PUBLIC_OUT}. ${rootsSentence()}`;
 }
 
 export function initPlayground(): void {
@@ -62,6 +80,11 @@ export function initPlayground(): void {
   const resetBtn = document.getElementById('play-reset') as HTMLButtonElement | null;
   const cheatNote = document.getElementById('play-cheat-note');
   if (!slider || !witnessHost || !constraintHost || !verdictHost) return;
+
+  // The section takeaway used to assert "Only x = 3 satisfies all three" as a
+  // fixed string. Fill it from the enumerated root set instead.
+  const rootsHost = document.getElementById('play-roots');
+  if (rootsHost) rootsHost.innerHTML = rootsSentence();
 
   let cheating = false;
 

@@ -44,25 +44,35 @@ export function initKzg(): void {
   honestBtn.addEventListener('click', () => {
     const open = kzgOpen(POLY, Z, Y_TRUE, srs);
     const v = kzgVerify(commit.exp, Y_TRUE, open.proofExp, TAU, Z);
-    calc.className = 'calc-box cb-ok';
+    // The verdict below is the value kzgVerify returned, not a fixed string.
+    calc.className = `calc-box ${v.accepts ? 'cb-ok' : 'cb-bad'}`;
+    const honestVerdict = v.accepts
+      ? `<div class="calc-verdict pv-ok">✓ Accepted — remainder ${open.remainder}, and the verifier's equation balances (${v.lhs} = ${v.rhs}), so an honest proof exists and verifies.</div>`
+      : `<div class="calc-verdict pv-bad">✗ Rejected — the verifier's equation does not balance (${v.lhs} ≠ ${v.rhs}). If you are seeing this, the honest opening path is broken.</div>`;
     calc.innerHTML = `
       <div class="calc-line"><strong>Honest opening of f at z = ${Z} to y = ${Y_TRUE}</strong></div>
       <div class="calc-line">Quotient q(x) = (f(x) − ${Y_TRUE}) / (x − ${Z}) = ${polyToString(open.quotient)} &nbsp; <span class="muted">remainder ${open.remainder}</span></div>
       <div class="calc-line">Proof π = g<sup>q(τ)</sup> = g<sup>${open.proofExp}</sup> = ${open.proofElement} &nbsp;<span class="muted">(built from the SRS)</span></div>
       <div class="calc-line">Pairing check enforces: f(τ) − y = q(τ)·(τ − z) → ${v.lhs} = ${v.rhs}</div>
       <div class="calc-note">${PAIRING_NOTE}</div>
-      <div class="calc-verdict pv-ok">✓ Accepted — the remainder is 0, so an honest proof exists and verifies.</div>`;
+      ${honestVerdict}`;
   });
 
   lieBtn.addEventListener('click', () => {
     const fg = forgeOpening(POLY, Z, Y_LIE, TAU, srs);
-    calc.className = 'calc-box cb-bad';
+    // "Soundness broken" is only true if the verifier ACCEPTED the forgery.
+    // Read the computed flag rather than asserting the outcome.
+    const forged = fg.verify.accepts;
+    calc.className = `calc-box ${forged ? 'cb-bad' : 'cb-ok'}`;
+    const forgeVerdict = forged
+      ? `<div class="calc-verdict pv-bad">✗ Soundness broken — the forged proof is <strong>accepted</strong> (${fg.verify.lhs} = ${fg.verify.rhs}). The leaked τ let the attacker satisfy the verifier's equation for a false statement.</div>`
+      : `<div class="calc-verdict pv-ok">✓ Forgery rejected — the verifier's equation does not balance (${fg.verify.lhs} ≠ ${fg.verify.rhs}), so this attempt failed.</div>`;
     calc.innerHTML = `
       <div class="calc-line"><strong>Goal: prove the lie f(${Z}) = ${Y_LIE}</strong> &nbsp;<span class="muted">(really f(${Z}) = ${Y_TRUE})</span></div>
       <div class="calc-line"><span class="muted">Honest route —</span> q(x) = (f(x) − ${Y_LIE}) / (x − ${Z}) leaves <strong>remainder ${fg.honest.remainder} ≠ 0</strong>: not a polynomial, so it can't be built from the SRS. An honest prover is stuck. ✗</div>
       <div class="calc-line forge-leak-line"><span class="muted">Attacker route, knowing τ = ${TAU} —</span> divide in the exponent directly: π = g<sup>(f(τ) − ${Y_LIE})/(τ − ${Z})</sup> = g<sup>${fg.forgedProofExp}</sup> = ${fg.forgedProofElement}</div>
       <div class="calc-line">Pairing check: f(τ) − y = q(τ)·(τ − z) → ${fg.verify.lhs} = ${fg.verify.rhs}</div>
       <div class="calc-note">${PAIRING_NOTE}</div>
-      <div class="calc-verdict pv-bad">✗ Soundness broken — the forged proof is <strong>accepted</strong>. The leaked τ let the attacker satisfy the verifier's equation for a false statement.</div>`;
+      ${forgeVerdict}`;
   });
 }
