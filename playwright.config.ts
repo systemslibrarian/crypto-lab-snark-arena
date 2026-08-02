@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 /**
  * E2E accessibility gate. Tests run against the production build served by
  * `vite preview`, so what passes here is what actually ships to Pages.
- * Run `npm run build` first (CI does).
+ * The web server builds first — see the note on `webServer.command`.
  */
 export default defineConfig({
   testDir: 'e2e',
@@ -12,7 +12,10 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'list' : [['list'], ['html', { open: 'never' }]],
   webServer: {
-    command: 'npm run preview -- --port 4303 --strictPort',
+    // Build before serving: `preview` only serves whatever is already in dist/,
+    // so a failed build would leave the last good bundle on disk and the suite
+    // would pass green against source that no longer compiles.
+    command: 'npm run build && npm run preview -- --port 4303 --strictPort',
     url: 'http://localhost:4303/crypto-lab-snark-arena/',
     reuseExistingServer: !process.env.CI,
   },
