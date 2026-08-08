@@ -198,7 +198,13 @@
         </div>
 
         <!-- Interactive circuit playground (built by src/ui/playground.ts) -->
-        <div class="panel" id="playground" aria-labelledby="playground-h">
+        <!-- role="region": without a role this is a generic div, and BOTH aria-label
+             and aria-labelledby are PROHIBITED on generic — the browser discards the
+             name and axe files it under `incomplete`, never as a violation, so the
+             heading below never named this panel for anyone. These four panels are
+             each a titled interactive exhibit with its own controls and live result,
+             which is exactly what a region landmark is for. -->
+        <div class="panel" id="playground" role="region" aria-labelledby="playground-h">
           <h3 class="ph" id="playground-h">Interactive: R1CS Circuit Playground</h3>
           <div class="pb">
             <p class="play-statement">Public statement: <strong>“I know a secret <span class="mono-inline">x</span> with <span class="mono-inline">x³ + x + 5 = 35</span>.”</strong> The verifier sees only that the output wire equals <strong>35</strong>. Your secret <span class="mono-inline">x</span> is the witness.</p>
@@ -237,7 +243,7 @@
           <p><strong>The setup is real; the ceremony is not.</strong> Powers of Tau and phase 2 each took exactly one contribution, and both entropy strings are published in the repo README (<span class="mono-inline">-e="random"</span> and <span class="mono-inline">-e="random2"</span>). By the rule Exhibit 05 and the quiz below both teach &mdash; security needs at least one participant who destroys their toxic waste &mdash; that makes the toxic waste for these artifacts effectively public. The proving and verifying you do here are real Groth16; the <em>soundness</em> of these particular keys is worth nothing, and a production deployment would use a multi-party ceremony instead.</p>
           <p>The artifacts — the witness-generator WASM (34 KB), the proving key (3.6 KB), and the verification key — are <strong>static files shipped with the page</strong>. That is precisely why a real SNARK works on GitHub Pages with no backend: proving and verifying are pure client-side computation.</p>
         </div>
-        <div class="panel" id="realproof" aria-labelledby="rp-panel-h">
+        <div class="panel" id="realproof" role="region" aria-labelledby="rp-panel-h">
           <h3 class="ph" id="rp-panel-h">Live: Groth16 prove + verify (snarkjs / BN254)</h3>
           <div class="pb">
             <div class="play-control">
@@ -444,7 +450,7 @@
         </div>
 
         <!-- Real ceremony with running product (built by src/ui/ceremony.ts) -->
-        <div class="panel" id="ceremony" aria-labelledby="ceremony-h">
+        <div class="panel" id="ceremony" role="region" aria-labelledby="ceremony-h">
           <h3 class="ph" id="ceremony-h">Live: Powers-of-Tau Ceremony (real arithmetic)</h3>
           <div class="pb">
             <p class="hint">Five participants each contribute a secret factor <span class="mono-inline">τᵢ</span>. The combined secret is the running product, and the public SRS element is <span class="mono-inline">g<sup>τ</sup></span>. Toggle who deletes their waste, then run.</p>
@@ -461,7 +467,7 @@
         </div>
 
         <!-- KZG forgery demo (built by src/ui/kzg.ts) -->
-        <div class="panel" id="forgery" aria-labelledby="forgery-h">
+        <div class="panel" id="forgery" role="region" aria-labelledby="forgery-h">
           <h3 class="ph" id="forgery-h">Live: Forge a Proof if τ Leaks (KZG opening)</h3>
           <div class="pb">
             <p class="hint">A KZG commitment to a polynomial <span class="mono-inline" id="forge-poly">f(x)</span> is <span class="mono-inline">C = g<sup>f(τ)</sup></span>. An honest opening proves <span class="mono-inline">f(z) = y</span>. Watch what an honest prover can do, then what an attacker who kept <span class="mono-inline">τ</span> can do.</p>

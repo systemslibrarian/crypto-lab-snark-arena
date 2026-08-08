@@ -207,7 +207,17 @@ input:focus-visible,
 .controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
 button { font-family: var(--mono); font-size: 12px; padding: 10px 15px; border-radius: 6px; cursor: pointer; letter-spacing: 0.05em; min-height: 44px; transition: all 0.15s ease; }
 .bp { background: var(--acc); color: #fff; border: 1px solid var(--acc); }
-.bp:hover { opacity: 0.85; }
+/* Darken the fill on hover rather than fading the whole control. `opacity: .85`
+   composited the accent fill AND its white label onto the panel together, which
+   in light theme dropped white-on-accent from 5.66:1 to 4.21:1 — a button that
+   got harder to read exactly when you pointed at it. Mixing toward black keeps
+   the label at full strength and lands at ~7:1 in both themes. Note --acc2 is
+   NOT usable here: it is a darker blue in light theme but a much lighter one in
+   dark, so white on it would fail the other way round. */
+.bp:hover {
+  background: color-mix(in srgb, var(--acc) 85%, #000);
+  border-color: color-mix(in srgb, var(--acc) 85%, #000);
+}
 .bp:disabled { opacity: 0.4; cursor: not-allowed; }
 .bs { background: none; color: var(--tx); border: 1px solid var(--bord); }
 .bs:hover { border-color: var(--tx2); color: var(--tx); }
