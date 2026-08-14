@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { boot, driveAllStates, NARROW } from './gate';
+import { boot, driveAllStates, expectBaselineNotStale, NARROW } from './gate';
 
 /**
  * WCAG A/AA regression gate for SNARK Arena.
@@ -21,6 +21,23 @@ for (const theme of ['dark', 'light'] as const) {
     test.setTimeout(900_000);
     await boot(page, theme);
     await driveAllStates(page, theme);
+
+    // The third ratchet rule — a baselined finding that no longer appears must
+    // be deleted, so the list can only shrink. `expectBaselineNotStale` was
+    // exported from `gate.ts` and imported by nothing, so it had never run.
+    //
+    // Dark at desktop only, and it is the sole configuration that qualifies —
+    // measured, not assumed. `nonTextSeen` is a single flat set with no theme
+    // or width dimension, so the rule only holds where the drive reaches EVERY
+    // baselined selector, and the other three each miss some:
+    //   - the five `.bp` primaries (`#ceremony-run`, `#forge-honest`,
+    //     `#forge-lie`, `#rp-prove`, `#rp-verify`, all recorded at 2.75:1) are
+    //     accent-bordered and clear 3:1 against the light surfaces, so they are
+    //     never findings in a light run;
+    //   - `button#play-reset.bs` is measured at desktop in both themes but not
+    //     at 380px in either, so phone-width runs miss it whatever the theme.
+    // Dark ∧ desktop is the intersection of those two constraints.
+    if (theme === 'dark') expectBaselineNotStale();
   });
 
   test(`no WCAG A/AA violations in ${theme} theme at 380px`, async ({ page }) => {
