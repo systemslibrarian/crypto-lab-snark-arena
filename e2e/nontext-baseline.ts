@@ -20,7 +20,6 @@ export const NONTEXT_BASELINE: Record<
   "control-boundary|a.cl-btn": { ratio: 2.45, required: 3.0, unverified: false },
   "control-boundary|button#ceremony-randomize.bs": { ratio: 1.22, required: 3.0, unverified: false },
   "control-boundary|button#ceremony-run.bp": { ratio: 2.75, required: 3.0, unverified: false },
-  "control-boundary|button#cl-theme-toggle.cl-btn.cl-icon": { ratio: 2.45, required: 3.0, unverified: false },
   "control-boundary|button#forge-honest.bp": { ratio: 2.75, required: 3.0, unverified: false },
   "control-boundary|button#forge-lie.bp": { ratio: 2.75, required: 3.0, unverified: false },
   "control-boundary|button#groth16-chain-run.bs": { ratio: 1.22, required: 3.0, unverified: false },
