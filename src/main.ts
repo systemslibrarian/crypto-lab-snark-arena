@@ -6,35 +6,9 @@ import { initQuiz } from './ui/quiz';
 import { initNav } from './ui/nav';
 import { runCeremony, SCALAR_R } from './crypto/setup';
 
-function initThemeToggle() {
-  const root = document.documentElement;
-  const header = document.querySelector('.site-header');
-  if (!header) {
-    return;
-  }
-
-  const button = document.createElement('button');
-  button.className = 'theme-toggle';
-  button.type = 'button';
-
-  function applyButtonState() {
-    const current = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-    const isDark = current === 'dark';
-    button.textContent = isDark ? '🌙' : '☀️';
-    button.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
-  }
-
-  button.addEventListener('click', () => {
-    const current = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    applyButtonState();
-  });
-
-  header.appendChild(button);
-  applyButtonState();
-}
+// Dark is the only theme. index.html's boot script pins data-theme with a
+// literal before first paint and overwrites any stored preference, so there is
+// nothing here to set, read, or offer a way to change.
 
 function hexBytes(byteCount: number): string {
   const bytes = new Uint8Array(byteCount);
@@ -167,7 +141,6 @@ function bindLegacyCeremony() {
 }
 
 function init() {
-  initThemeToggle();
   initNav();
   showProofHexes();
   bindLegacyCeremony();
