@@ -3,7 +3,8 @@
 // Vitalik Buterin's QAP write-up and in countless circom tutorials.
 //
 // A SNARK proves "I know a witness x satisfying this constraint system" without
-// revealing x. Here we make the constraint system fully concrete: the witness
+// additional disclosure beyond its public statement. Here that statement already
+// identifies x in the slider range. We make the system concrete: the witness
 // vector, the three constraint matrices, and the A·s ∘ B·s = C·s check that the
 // prover must satisfy. Everything is computed live.
 
@@ -14,7 +15,8 @@ import { Field } from './field';
 export const R1CS_PRIME = 8191;
 
 // Witness layout. Index 0 is the constant wire "1". `out` is the PUBLIC wire,
-// fixed to the statement value (35). x, v1, v2 are the prover's secret wires.
+// fixed to the statement value (35). x, v1, v2 are private circuit wires, which
+// does not imply confidentiality when the public statement determines them.
 //   s = [ 1 , x , out , v1 , v2 ]
 export const WIRES = ['1', 'x', 'out', 'v1', 'v2'] as const;
 export const PUBLIC_OUT = 35;

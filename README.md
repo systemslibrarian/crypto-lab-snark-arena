@@ -2,7 +2,7 @@
 
 ## What It Is
 
-SNARK Arena demonstrates the two most deployed zk-SNARK proving systems: Groth16 (Groth, EUROCRYPT 2016) and PLONK (Gabizon et al., 2019). Both are succinct non-interactive arguments of knowledge: they prove knowledge of a secret witness satisfying a circuit without revealing the witness, in proofs small enough to verify in milliseconds. Groth16 produces 128-byte proofs on BN254 with per-circuit trusted setup — that is the compressed encoding; the same three group elements are 256 bytes uncompressed, which is what snarkjs writes and what the live-proof panel reports. PLONK produces approximately 400-byte proofs with a universal trusted setup reusable across circuits. Both rely on pairing-based assumptions and are not post-quantum secure.
+SNARK Arena demonstrates the two most deployed zk-SNARK proving systems: Groth16 (Groth, EUROCRYPT 2016) and PLONK (Gabizon et al., 2019). Both are succinct non-interactive arguments of knowledge: under their security assumptions, they prove knowledge of a witness satisfying a circuit without disclosing additional information beyond the public statement, in small proofs. That statement can itself reveal the witness. Groth16 produces 128-byte proofs on BN254 with per-circuit trusted setup — that is the compressed encoding; the same three group elements are 256 bytes uncompressed, which is what snarkjs writes and what the live-proof panel reports. PLONK produces approximately 400-byte proofs with a universal trusted setup reusable across circuits. Both rely on pairing-based assumptions and are not post-quantum secure.
 
 ## When to Use It
 
@@ -20,6 +20,8 @@ SNARK Arena demonstrates the two most deployed zk-SNARK proving systems: Groth16
 Six exhibits, a glossary, and a self-check quiz walk from what a zk-SNARK is — with an interactive R1CS circuit playground — through Groth16 and PLONK, a head-to-head comparison, the trusted-setup problem in depth (a live powers-of-tau ceremony and a KZG forgery demo), and production deployments. A featured panel generates and verifies a genuine Groth16 proof entirely in your browser with snarkjs: produce it, verify it (`true`), then tamper with the public output and watch the pairing check reject it (`false`). No server, no simulation.
 
 ## What Can Go Wrong
+
+- **Private input is not necessarily confidential.** The live proof panel publishes `out = x³ + x + 5`. All 21 slider values 0–20 have distinct outputs below field wraparound, so `out=35` identifies `x=3` without inspecting the proof. The toy playground likewise has only `x=3` in its 0–9 slider range, while its full field still has the documented three roots. This example teaches proof mechanics, not witness confidentiality; zero knowledge cannot undo information already implied by public inputs. This is separate from the intentionally insecure setup artifacts described below.
 
 - **Trusted-setup toxic waste** — anyone who retains the secret `τ` from the setup ceremony can forge proofs for false statements; the powers-of-tau and KZG-forgery exhibits demonstrate exactly this.
 - **Single-party setup** — a one-participant ceremony is no better than no setup; soundness requires a multi-party ceremony where at least one honest participant destroys their contribution.

@@ -30,7 +30,7 @@ function renderWitness(host: HTMLElement, report: WitnessReport, cheating: boole
       const forged = cheating && name === 'v2';
       const pub = name === 'out';
       const cls = forged ? 'wv-cell wv-forged' : pub ? 'wv-cell wv-public' : 'wv-cell';
-      const tag = pub ? '<span class="wv-tag">public</span>' : name === '1' ? '<span class="wv-tag">const</span>' : '<span class="wv-tag">secret</span>';
+      const tag = pub ? '<span class="wv-tag">public</span>' : name === '1' ? '<span class="wv-tag">const</span>' : '<span class="wv-tag">private</span>';
       return `<div class="${cls}"><span class="wv-name">${name}</span><span class="wv-val">${val}</span>${tag}</div>`;
     })
     .join('');
@@ -58,7 +58,7 @@ function renderConstraints(host: HTMLElement, report: WitnessReport): void {
 function renderVerdict(host: HTMLElement, report: WitnessReport, cheating: boolean): void {
   if (report.satisfied) {
     host.className = 'play-verdict pv-ok';
-    host.innerHTML = `<strong>✓ Valid witness.</strong> Every constraint holds and the output wire equals the public statement (${PUBLIC_OUT}). A SNARK over this circuit would prove you know x — without revealing that x = ${report.x}.`;
+    host.innerHTML = `<strong>✓ Valid witness.</strong> Every constraint holds and the output wire equals the public statement (${PUBLIC_OUT}). Over this slider's 0–9 range, the public statement already identifies x = ${report.x}. A SNARK can prove knowledge without additional witness disclosure, but cannot hide that public inference. ${rootsSentence()}`;
     return;
   }
   const failed = report.results.find((r) => !r.holds)!;

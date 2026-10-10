@@ -104,7 +104,8 @@ export function initRealProof(): void {
       out.className = 'calc-box cb-ok';
       out.innerHTML = `
         <div class="calc-line"><strong>Proof generated in ${ms} ms</strong> — a genuine Groth16 proof on BN254.</div>
-        <div class="calc-line">Public output the proof commits to: <strong>out = ${publicSignals[0]}</strong> &nbsp;<span class="muted">(x stays secret)</span></div>
+        <div class="calc-line">Public output the proof commits to: <strong>out = ${publicSignals[0]}</strong> &nbsp;<span class="muted">(this public output identifies x in the slider range 0–20)</span></div>
+        <div class="calc-line">x is a private circuit input, not an additional public signal. This example shows proof mechanics; it does not keep that small witness confidential.</div>
         <div class="calc-line">Proof size: <strong>${proofBytes} bytes</strong> &mdash; counted from the proof object above (${proofBytes / FIELD_ELEMENT_BYTES} BN254 base-field coordinates &times; ${FIELD_ELEMENT_BYTES} B, uncompressed), independent of circuit size.</div>
         <div class="rp-proof"><div class="muted">proof.A (G1):</div>${fmtPt(proof.pi_a)}<div class="muted">proof.B (G2):</div>${fmtPt(proof.pi_b)}<div class="muted">proof.C (G1):</div>${fmtPt(proof.pi_c)}</div>
         <div class="calc-line">Now verify it against the verification key — or tamper with the public output and watch it fail.</div>`;
@@ -133,7 +134,7 @@ export function initRealProof(): void {
       const ok = await snarkjs.groth16.verify(vk, snap.publicSignals, snap.proof);
       out.className = `calc-box ${ok ? 'cb-ok' : 'cb-bad'}`;
       out.innerHTML = `<div class="calc-verdict ${ok ? 'pv-ok' : 'pv-bad'}">${ok ? '✓' : '✗'} groth16.verify → ${ok}</div>
-        <div class="calc-line">The verifier checked the pairing equation using only the public output (${snap.publicSignals[0]}), the proof, and the verification key. It never saw x.</div>`;
+        <div class="calc-line">The verifier checked the pairing equation using only the public output (${snap.publicSignals[0]}), the proof, and the verification key. It never saw x as an input, but the public output still identifies x over the slider range 0–20. Zero knowledge hides no information already implied by that statement.</div>`;
     } catch (err) {
       out.className = 'calc-box cb-bad';
       out.innerHTML = `<div class="calc-line">Verification error: ${String(err)}</div>`;
