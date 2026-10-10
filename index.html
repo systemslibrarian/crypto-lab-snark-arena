@@ -184,7 +184,7 @@
           <p><strong>Argument of Knowledge:</strong> verifier is convinced prover knows a witness satisfying the circuit.</p>
           <p><strong>Completeness:</strong> honest prover with valid witness is accepted.</p>
           <p><strong>Soundness:</strong> cheating prover without witness is rejected except negligible probability.</p>
-          <p><strong>Zero-knowledge:</strong> proof reveals nothing about the witness beyond validity.</p>
+          <p><strong>Zero-knowledge:</strong> the proof reveals no additional witness information beyond what the public statement already implies. A public statement can itself identify a small witness.</p>
           <p>A circuit is an arithmetic constraint system over a finite field. The classic teaching example proves knowledge of <span class="mono-inline">x</span> such that <span class="mono-inline">x³ + x + 5 = 35</span>. It compiles to three rank-1 constraints over the field, with witness wires <span class="mono-inline">v1 = x·x</span> and <span class="mono-inline">v2 = v1·x</span>.</p>
         </div>
 
@@ -198,9 +198,9 @@
         <div class="panel" id="playground" role="region" aria-labelledby="playground-h">
           <h3 class="ph" id="playground-h">Interactive: R1CS Circuit Playground</h3>
           <div class="pb">
-            <p class="play-statement">Public statement: <strong>“I know a secret <span class="mono-inline">x</span> with <span class="mono-inline">x³ + x + 5 = 35</span>.”</strong> The verifier sees only that the output wire equals <strong>35</strong>. Your secret <span class="mono-inline">x</span> is the witness.</p>
+            <p class="play-statement">Public statement: <strong>“I know a witness <span class="mono-inline">x</span> with <span class="mono-inline">x³ + x + 5 = 35</span>.”</strong> The output wire <strong>35</strong> is public. With the slider range 0–9, that statement already identifies <span class="mono-inline">x = 3</span>; a private circuit input is not necessarily confidential.</p>
             <div class="play-control">
-              <label for="play-x" class="play-label">Secret witness <span class="mono-inline">x</span> =</label>
+              <label for="play-x" class="play-label">Private input witness <span class="mono-inline">x</span> =</label>
               <input type="range" id="play-x" min="0" max="9" step="1" value="3" aria-describedby="play-verdict" />
               <output id="play-x-val" class="play-xval" for="play-x">3</output>
             </div>
@@ -238,11 +238,11 @@
           <h3 class="ph" id="rp-panel-h">Live: Groth16 prove + verify (snarkjs / BN254)</h3>
           <div class="pb">
             <div class="play-control">
-              <label for="rp-x" class="play-label">Secret witness <span class="mono-inline">x</span> =</label>
+              <label for="rp-x" class="play-label">Private input witness <span class="mono-inline">x</span> =</label>
               <input type="range" id="rp-x" min="0" max="20" step="1" value="3" />
               <output id="rp-x-val" class="play-xval" for="rp-x">3</output>
             </div>
-            <p class="hint">Pick your secret <span class="mono-inline">x</span>. The prover computes <span class="mono-inline">out = x³ + x + 5</span> and proves it knows an <span class="mono-inline">x</span> producing that output — without revealing <span class="mono-inline">x</span>. First proof loads the ~0.7 MB snarkjs library; later proofs are instant.</p>
+            <p class="hint">Pick a private circuit input <span class="mono-inline">x</span>. The prover computes <span class="mono-inline">out = x³ + x + 5</span> and proves knowledge of an input producing it. Here the public output identifies x over the slider range 0–20: all 21 outputs are distinct, and out = 35 identifies x = 3. This teaches proof mechanics, not witness confidentiality. Zero knowledge cannot hide information already implied by the public statement. First proof loads the ~0.7 MB snarkjs library.</p>
             <div class="controls">
               <button class="bp" id="rp-prove" type="button">Generate real proof</button>
               <button class="bp" id="rp-verify" type="button">Verify</button>

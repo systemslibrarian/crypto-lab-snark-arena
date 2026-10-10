@@ -262,7 +262,8 @@ test('real proof: the public output the proof commits to is x^3 + x + 5', async 
     const expected = BigInt(x) ** 3n + BigInt(x) + 5n;
     expect(numAfter(text, 'out ='), `public signal for x = ${x}`).toBe(Number(expected));
     await expect(page.locator('#rp-out')).toHaveClass(/cb-ok/);
-    expect(text, 'the witness must not be printed').toContain('x stays secret');
+    expect(text, 'public-statement inference must not be mistaken for confidentiality').toContain('public output identifies x');
+    expect(text).not.toContain('x stays secret');
   }
 });
 

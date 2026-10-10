@@ -11,9 +11,9 @@ interface Question {
 const QUESTIONS: Question[] = [
   {
     q: 'In the circuit x³ + x + 5 = 35, what is the "witness"?',
-    options: ['The public output 35', 'The secret value x the prover knows', 'The verification key', 'The proof bytes'],
+    options: ['The public output 35', 'The private circuit input x the prover knows', 'The verification key', 'The proof bytes'],
     answer: 1,
-    explain: 'The witness is the secret input (x). A valid witness makes every constraint hold against the public statement.',
+    explain: 'The witness is the private circuit input (x). A valid witness makes every constraint hold against the public statement. Private input does not imply confidentiality: public out = 35 already identifies x = 3 within the slider range.',
   },
   {
     q: 'Why is a single-party trusted setup considered equivalent to no trust at all?',
