@@ -1,7 +1,7 @@
 // Real, in-browser Groth16 proving and verification via snarkjs. This is NOT
 // simulated: it generates a genuine BN254 proof for the SAME circuit as the
 // transparent playground (x^3 + x + 5 = out), using artifacts produced by a
-// real trusted-setup ceremony at build time. Every file is static, served
+// local setup with unverified original ceremony provenance. Every file is static, served
 // from /zk/ — which is exactly why this works on GitHub Pages with no backend.
 
 const BASE = import.meta.env.BASE_URL; // e.g. "/crypto-lab-snark-arena/"
@@ -156,7 +156,7 @@ export function initRealProof(): void {
       const ok = await snarkjs.groth16.verify(vk, [faked], snap.proof);
       out.className = 'calc-box cb-bad';
       out.innerHTML = `<div class="calc-verdict pv-bad">✗ groth16.verify → ${ok}</div>
-        <div class="calc-line">We submitted the real proof but lied about the public output (${faked} ≠ ${realOut}). The pairing check fails — the proof is cryptographically bound to the true statement. (No toxic waste was leaked here, so the lie is rejected — contrast with the forgery demo in Exhibit 05.)</div>`;
+        <div class="calc-line">We submitted the real proof but lied about the public output (${faked} ≠ ${realOut}). The pairing check rejects this altered proof. That rejection does not establish secret destruction or trustworthy setup for these demo keys — contrast with the explicit leaked-secret forgery model in Exhibit 05.</div>`;
     } catch (err) {
       out.className = 'calc-box cb-bad';
       out.innerHTML = `<div class="calc-line">Verification error: ${String(err)}</div>`;
