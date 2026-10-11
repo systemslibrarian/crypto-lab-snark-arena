@@ -4,6 +4,7 @@ zkbuild/
 /test-results/
 /playwright-report/
 /.pw-browsers/
+__pycache__/
 
 .DS_Store
 chat.md

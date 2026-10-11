@@ -22,6 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Provenance positive and negative controls
+        run: python3 -m unittest discover -s tests -p 'test_cubic_provenance.py' -v
+      - name: Reproduce shipped cubic witness WASM from pinned compiler source
+        run: python3 scripts/verify-cubic-wasm.py
+      - name: Retain actual source and compiler evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cubic-provenance
+          path: zkbuild/cubic-provenance.json
+          if-no-files-found: error
       - uses: actions/setup-node@v7
         with:
           node-version: 24

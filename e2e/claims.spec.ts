@@ -314,8 +314,25 @@ test('real proof: a tampered public output is rejected, and the panel states why
   const [faked, real] = nums(text.split('lied about the public output')[1]);
   expect(real).toBe(trueOut);
   expect(faked).toBe(trueOut + 1);
-  expect(text).toContain('pairing check fails');
-  expect(text).toContain('bound to the true statement');
+  expect(text).toContain('pairing check rejects this altered proof');
+  expect(text).toContain('does not establish secret destruction or trustworthy setup');
+  expect(text).not.toContain('No toxic waste was leaked');
+});
+
+test('real proof: setup trust stays unverified without inferring a leak from published entropy', async ({ page }) => {
+  const explanation = await page.locator('#exhibit-realproof').innerText();
+  expect(explanation).toContain('unverified ceremony provenance');
+  expect(explanation).toContain('Published entropy strings alone do not establish leaked toxic waste');
+  expect(explanation).toContain('snarkjs also mixes fresh random bytes');
+  expect(explanation).toContain('lacks authenticated original setup records');
+  expect(explanation).toContain('not production trust material');
+  expect(explanation).not.toContain('toxic waste for these artifacts effectively public');
+  expect(explanation).not.toContain('soundness of these particular keys is worth nothing');
+  const banner = await page.locator('#realproof .trust-banner').innerText();
+  expect(banner).toContain('unverified ceremony provenance');
+  expect(banner).toContain('neither leaked toxic waste nor secret destruction');
+  expect(banner).not.toContain('unsound by construction');
+  expect(banner).not.toContain('treat τ as known');
 });
 
 // ════════════ EXHIBIT 02 — ceremony visualizer ════════════
