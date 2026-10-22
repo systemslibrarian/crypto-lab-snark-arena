@@ -13,10 +13,10 @@ function randContribution(): number {
   return 1 + Math.floor(Math.random() * (SCALAR_R - 1));
 }
 
-function renderToggles(host: HTMLElement): void {
+function renderToggles(host: HTMLElement, disabled = false, onChange?: () => void): void {
   host.innerHTML = contributions
     .map(
-      (c, i) => `<label class="ptoggle"><input type="checkbox" data-p="${i}" ${deleted[i] ? 'checked' : ''} />
+      (c, i) => `<label class="ptoggle"><input type="checkbox" data-p="${i}" ${deleted[i] ? 'checked' : ''} ${disabled ? 'disabled' : ''} />
         P${i + 1} deletes waste <span class="ptoggle-c">τ${sub(i + 1)} = ${c}</span></label>`,
     )
     .join('');
@@ -24,6 +24,7 @@ function renderToggles(host: HTMLElement): void {
     box.addEventListener('change', () => {
       const idx = Number(box.dataset.p);
       deleted[idx] = box.checked;
+      onChange?.();
     });
   });
 }
@@ -59,20 +60,24 @@ export function initCeremony(): void {
   if (!toggleHost || !chainHost || !runBtn || !calc || !verdict) return;
 
   let nodes = buildChain(chainHost);
-  renderToggles(toggleHost);
+  const clearEvidence = () => {
+    nodes = buildChain(chainHost);
+    calc.innerHTML = '';
+    verdict.className = 'play-verdict';
+    verdict.textContent = '';
+  };
+  renderToggles(toggleHost, false, clearEvidence);
 
   function reset(): void {
-    nodes = buildChain(chainHost!);
-    renderToggles(toggleHost!);
-    calc!.innerHTML = '';
-    verdict!.className = 'play-verdict';
-    verdict!.textContent = '';
+    clearEvidence();
+    renderToggles(toggleHost!, false, clearEvidence);
   }
 
   function animate(report: CeremonyReport): void {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     runBtn!.disabled = true;
     if (randBtn) randBtn.disabled = true;
+    renderToggles(toggleHost!, true);
 
     const settle = (i: number) => {
       const step = report.steps[i];
@@ -107,6 +112,7 @@ export function initCeremony(): void {
   function finish(report: CeremonyReport): void {
     runBtn!.disabled = false;
     if (randBtn) randBtn.disabled = false;
+    renderToggles(toggleHost!, false, clearEvidence);
     const product = report.steps.map((s) => s.contribution).join(' · ');
     calc!.innerHTML = `<div class="calc-line">Combined secret: τ = ${product} mod ${SCALAR_R} = <strong>${report.finalTau}</strong></div>
       <div class="calc-line">Public SRS element: g<sup>τ</sup> = <strong>${report.steps[N - 1].runningElement}</strong> (mod 103)</div>`;

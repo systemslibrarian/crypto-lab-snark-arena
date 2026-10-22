@@ -67,6 +67,19 @@ describe('runCeremony (powers of tau)', () => {
     expect(runCeremony([2, 3], [true, false]).secure).toBe(true);
     expect(runCeremony([2, 3], [false, false]).secure).toBe(false);
   });
+
+  it('rejects incomplete or extra deletion records instead of assuming a deletion', () => {
+    expect(() => runCeremony([2, 3], [false])).toThrow(/one deletion flag per contribution/);
+    expect(() => runCeremony([2], [false, true])).toThrow(/one deletion flag per contribution/);
+  });
+
+  it('rejects empty, non-canonical, and non-boolean participant records', () => {
+    expect(() => runCeremony([], [])).toThrow(/at least one participant/);
+    for (const contribution of [0, SCALAR_R, -1, 1.5]) {
+      expect(() => runCeremony([contribution], [false])).toThrow(/nonzero canonical element/);
+    }
+    expect(() => runCeremony([2], [1 as unknown as boolean])).toThrow(/must be boolean/);
+  });
 });
 
 describe('KZG commit', () => {

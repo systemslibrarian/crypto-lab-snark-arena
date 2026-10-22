@@ -79,15 +79,28 @@ export function initRealProof(): void {
   const out = document.getElementById('rp-out');
   if (!xInput || !proveBtn || !verifyBtn || !tamperBtn || !out) return;
 
-  const syncX = () => { if (xVal) xVal.textContent = xInput.value; };
-  xInput.addEventListener('input', syncX);
-  syncX();
-
+  let evidenceVersion = 0;
   const lockVerify = (disabled: boolean) => { verifyBtn.disabled = disabled; tamperBtn.disabled = disabled; };
+  const syncX = () => { if (xVal) xVal.textContent = xInput.value; };
+  const retireProof = () => {
+    evidenceVersion += 1;
+    last = null;
+    lockVerify(true);
+    out.className = 'calc-box';
+    out.innerHTML = '<div class="calc-line">Input changed. Generate a new proof for the current witness.</div>';
+  };
+  xInput.addEventListener('input', () => {
+    syncX();
+    retireProof();
+  });
+  syncX();
+  last = null;
   lockVerify(true);
 
   proveBtn.addEventListener('click', async () => {
     const x = Number(xInput.value);
+    const requestVersion = ++evidenceVersion;
+    last = null;
     proveBtn.disabled = true;
     lockVerify(true);
     setBusy(out, `Loading snarkjs and generating a real Groth16 proof for x = ${x}… `);
@@ -96,6 +109,7 @@ export function initRealProof(): void {
       const t0 = performance.now();
       const { proof, publicSignals } = await snarkjs.groth16.fullProve({ x }, WASM, ZKEY);
       const ms = (performance.now() - t0).toFixed(0);
+      if (requestVersion !== evidenceVersion) return;
       if (!Array.isArray(proof?.pi_a) || !Array.isArray(proof?.pi_b) || !Array.isArray(proof?.pi_c)) {
         throw new Error('unexpected proof shape');
       }
@@ -111,10 +125,12 @@ export function initRealProof(): void {
         <div class="calc-line">Now verify it against the verification key — or tamper with the public output and watch it fail.</div>`;
       lockVerify(false);
     } catch (err) {
+      if (requestVersion !== evidenceVersion) return;
       out.className = 'calc-box cb-bad';
       out.innerHTML = `<div class="calc-line">Proving failed: ${String(err)}. If you are offline, the snarkjs library or artifacts could not load; the transparent-math panels still work.</div>`;
     } finally {
       proveBtn.disabled = false;
+      if (requestVersion !== evidenceVersion) lockVerify(true);
     }
   });
 
@@ -126,26 +142,30 @@ export function initRealProof(): void {
   verifyBtn.addEventListener('click', async () => {
     if (!last) return;
     const snap = last; // pin the proof in case a new Prove resolves mid-await
+    const requestVersion = evidenceVersion;
     lockVerify(true);
     setBusy(out, 'Verifying the proof against the verification key… ');
     try {
       const snarkjs = await loadSnarkjs();
       const vk = await ensureVkey();
       const ok = await snarkjs.groth16.verify(vk, snap.publicSignals, snap.proof);
+      if (requestVersion !== evidenceVersion) return;
       out.className = `calc-box ${ok ? 'cb-ok' : 'cb-bad'}`;
       out.innerHTML = `<div class="calc-verdict ${ok ? 'pv-ok' : 'pv-bad'}">${ok ? '✓' : '✗'} groth16.verify → ${ok}</div>
         <div class="calc-line">The verifier checked the pairing equation using only the public output (${snap.publicSignals[0]}), the proof, and the verification key. It never saw x as an input, but the public output still identifies x over the slider range 0–20. Zero knowledge hides no information already implied by that statement.</div>`;
     } catch (err) {
+      if (requestVersion !== evidenceVersion) return;
       out.className = 'calc-box cb-bad';
       out.innerHTML = `<div class="calc-line">Verification error: ${String(err)}</div>`;
     } finally {
-      lockVerify(false);
+      lockVerify(requestVersion !== evidenceVersion || last !== snap);
     }
   });
 
   tamperBtn.addEventListener('click', async () => {
     if (!last) return;
     const snap = last; // pin the proof in case a new Prove resolves mid-await
+    const requestVersion = evidenceVersion;
     lockVerify(true);
     const realOut = snap.publicSignals[0];
     const faked = String(BigInt(realOut) + 1n); // claim a false public output (big-int safe)
@@ -154,14 +174,16 @@ export function initRealProof(): void {
       const snarkjs = await loadSnarkjs();
       const vk = await ensureVkey();
       const ok = await snarkjs.groth16.verify(vk, [faked], snap.proof);
+      if (requestVersion !== evidenceVersion) return;
       out.className = 'calc-box cb-bad';
       out.innerHTML = `<div class="calc-verdict pv-bad">✗ groth16.verify → ${ok}</div>
         <div class="calc-line">We submitted the real proof but lied about the public output (${faked} ≠ ${realOut}). The pairing check rejects this altered proof. That rejection does not establish secret destruction or trustworthy setup for these demo keys — contrast with the explicit leaked-secret forgery model in Exhibit 05.</div>`;
     } catch (err) {
+      if (requestVersion !== evidenceVersion) return;
       out.className = 'calc-box cb-bad';
       out.innerHTML = `<div class="calc-line">Verification error: ${String(err)}</div>`;
     } finally {
-      lockVerify(false);
+      lockVerify(requestVersion !== evidenceVersion || last !== snap);
     }
   });
 }

@@ -70,6 +70,21 @@ export interface CeremonyReport {
  * it stays unknown as long as a single participant deletes their factor.
  */
 export function runCeremony(contributions: number[], deletedFlags: boolean[]): CeremonyReport {
+  if (contributions.length === 0) {
+    throw new Error('ceremony requires at least one participant');
+  }
+  if (contributions.length !== deletedFlags.length) {
+    throw new Error('ceremony requires one deletion flag per contribution');
+  }
+  contributions.forEach((c) => {
+    if (!Number.isInteger(c) || c <= 0 || c >= SCALAR_R) {
+      throw new Error(`ceremony contribution must be a nonzero canonical element of F_${SCALAR_R}`);
+    }
+  });
+  if (!deletedFlags.every((deleted) => typeof deleted === 'boolean')) {
+    throw new Error('ceremony deletion flags must be boolean');
+  }
+
   const steps: CeremonyStep[] = [];
   let running = 1;
   contributions.forEach((c, i) => {
@@ -77,7 +92,7 @@ export function runCeremony(contributions: number[], deletedFlags: boolean[]): C
     steps.push({
       index: i,
       contribution: c,
-      deleted: deletedFlags[i] ?? true,
+      deleted: deletedFlags[i],
       runningTau: running,
       runningElement: enc(running),
     });
@@ -85,7 +100,7 @@ export function runCeremony(contributions: number[], deletedFlags: boolean[]): C
   return {
     steps,
     finalTau: running,
-    secure: deletedFlags.some((d) => d),
+    secure: steps.some((step) => step.deleted),
   };
 }
 
