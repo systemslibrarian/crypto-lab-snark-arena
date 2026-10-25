@@ -4,10 +4,11 @@ import { boot, driveAllStates, expectBaselineNotStale, NARROW } from './gate';
 /**
  * WCAG A/AA regression gate for SNARK Arena.
  *
- * Seventeen states per theme at desktop and phone width: the R1CS playground
+ * Twenty-three states per theme at desktop and phone width: the R1CS playground
  * satisfying, unsatisfying and forged; the REAL snarkjs Groth16 proof
  * generated, verified and tampered (an exhibit the previous gate never drove at
- * all); the ceremony chain; the live ceremony with an honest deleter, with
+ * all); the constraint-gap baseline, retired state, phantom-output comparison
+ * and proof-tampering control; the ceremony chain; the live ceremony with an honest deleter, with
  * nobody deleting and re-randomised; the KZG opening honest and forged; the
  * quiz answered wrong and then completed; and the scrolled state where
  * `#to-top` and the scroll-spy chip exist.

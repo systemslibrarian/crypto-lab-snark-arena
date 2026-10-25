@@ -53,6 +53,8 @@ class ProvenanceControls(unittest.TestCase):
         receipt = self.root / 'zkbuild/cubic-provenance.json'
         receipt.write_text('{"state":"reproduced-shipped-wasm"}')
         (self.root / 'public/zk').mkdir(parents=True)
+        (self.root / 'scripts').mkdir()
+        (self.root / gate.ARTIFACT_CHECKER).write_text('// fixture\n')
         shipped = self.root / gate.SHIPPED
         shipped.write_bytes(b'previous shipped bytes')
         with patch.object(gate, 'ROOT', self.root), patch.object(sys, 'argv', ['verify-cubic-wasm.py']), \
@@ -63,66 +65,76 @@ class ProvenanceControls(unittest.TestCase):
         self.assertEqual(shipped.read_bytes(), b'previous shipped bytes')
 
     def pair(self):
-        first, second = self.root / 'first', self.root / 'second'
-        for destination in (first, second):
-            (destination / 'cubic_js').mkdir(parents=True)
-            (destination / 'cubic_js/cubic.wasm').write_bytes(b'\0asm\x01\0\0\0\x00fixture')
-            (destination / 'cubic.r1cs').write_bytes(b'r1cs\x01\0\0\0fixture')
-        shipped = self.root / 'shipped.wasm'
-        shipped.write_bytes((first / 'cubic_js/cubic.wasm').read_bytes())
-        return first, second, shipped
+        first, second, captured = self.root / 'first', self.root / 'second', self.root / 'captured'
+        for spec in gate.CIRCUITS:
+            for destination in (first, second):
+                (destination / (spec['name'] + '_js')).mkdir(parents=True, exist_ok=True)
+                (destination / (spec['name'] + '_js') / (spec['name'] + '.wasm')).write_bytes(
+                    b'\0asm\x01\0\0\0\x00fixture-' + spec['name'].encode())
+                (destination / (spec['name'] + '.r1cs')).write_bytes(
+                    b'r1cs\x01\0\0\0fixture-' + spec['name'].encode())
+            shipped = captured / spec['wasm']
+            shipped.parent.mkdir(parents=True, exist_ok=True)
+            shipped.write_bytes((first / (spec['name'] + '_js') / (spec['name'] + '.wasm')).read_bytes())
+        return first, second, captured
 
     def test_equal_pair_and_shipped_match(self):
         rows = gate.compare_artifacts(*self.pair())
-        self.assertTrue(rows[0]['repeatMatches'] and rows[0]['matchesShipped'])
-        self.assertEqual(rows[1]['historicalR1csComparison'], 'not-available')
+        self.assertEqual(len(rows), len(gate.CIRCUITS) * 2)
+        self.assertTrue(all(row['repeatMatches'] for row in rows))
+        self.assertTrue(all(row['matchesShipped'] for row in rows if row['path'].endswith('.wasm')))
+        self.assertTrue(all(row['historicalR1csComparison'] == 'not-available'
+                            for row in rows if row['path'].endswith('.r1cs')))
 
     def test_one_changed_build_byte_rejected(self):
-        first, second, shipped = self.pair()
+        first, second, captured = self.pair()
+        shipped = captured / gate.SHIPPED
         (second / 'cubic_js/cubic.wasm').write_bytes(shipped.read_bytes() + b'changed')
         with self.assertRaisesRegex(RuntimeError, 'clean circuit builds differ'):
-            gate.compare_artifacts(first, second, shipped)
+            gate.compare_artifacts(first, second, captured)
 
     def test_two_equal_builds_are_insufficient_if_shipped_differs(self):
-        first, second, shipped = self.pair()
+        first, second, captured = self.pair()
+        shipped = captured / gate.SHIPPED
         shipped.write_bytes(shipped.read_bytes() + b'changed')
         with self.assertRaisesRegex(RuntimeError, 'differs from captured shipped'):
-            gate.compare_artifacts(first, second, shipped)
+            gate.compare_artifacts(first, second, captured)
 
     def test_missing_shipped_or_generated_artifact_is_not_success(self):
-        for missing in ('shipped.wasm', 'second/cubic.r1cs'):
+        for missing in (gate.SHIPPED, 'second/cubic.r1cs'):
             with self.subTest(missing=missing):
                 # Recreate independent inputs for each control.
                 with tempfile.TemporaryDirectory(dir=self.root) as temporary:
                     old = self.root; self.root = pathlib.Path(temporary)
                     try:
-                        pair = self.pair()
-                        (self.root / missing).unlink()
+                        first, second, captured = self.pair()
+                        target = captured / missing if missing == gate.SHIPPED else self.root / missing
+                        target.unlink()
                         with self.assertRaises(FileNotFoundError):
-                            gate.compare_artifacts(*pair)
+                            gate.compare_artifacts(first, second, captured)
                     finally:
                         self.root = old
 
     def test_equal_empty_or_header_only_artifacts_rejected(self):
-        first, second, shipped = self.pair()
+        first, second, captured = self.pair()
         for value in (b'', b'\0asm\x01\0\0\0'):
             for directory in (first, second):
                 (directory / 'cubic_js/cubic.wasm').write_bytes(value)
             with self.assertRaisesRegex(RuntimeError, 'Empty or incomplete'):
-                gate.compare_artifacts(first, second, shipped)
+                gate.compare_artifacts(first, second, captured)
 
     def test_equal_malformed_outputs_rejected(self):
-        first, second, shipped = self.pair()
+        first, second, captured = self.pair()
         for directory in (first, second):
             (directory / 'cubic_js/cubic.wasm').write_bytes(b'not a WASM binary')
         with self.assertRaisesRegex(RuntimeError, 'Malformed'):
-            gate.compare_artifacts(first, second, shipped)
+            gate.compare_artifacts(first, second, captured)
 
     def test_equal_wasm_with_different_r1cs_rejected(self):
-        first, second, shipped = self.pair()
+        first, second, captured = self.pair()
         (second / 'cubic.r1cs').write_bytes(b'r1cs\x01\0\0\0changed')
         with self.assertRaisesRegex(RuntimeError, 'clean circuit builds differ'):
-            gate.compare_artifacts(first, second, shipped)
+            gate.compare_artifacts(first, second, captured)
 
     def archive(self, name='source/file', link=False):
         archive = self.root / 'archive.tar.gz'
@@ -196,10 +208,22 @@ class ProvenanceControls(unittest.TestCase):
 
     def source_repo(self):
         self.git('init', '-q', '--initial-branch=main')
-        for name, data in [(gate.CIRCUIT, b'pragma circom 2.0.0;\n'),
-                           (gate.SHIPPED, b'\0asm\x01\0\0\0fixture')]:
+        real_bundle = (ROOT / gate.SNARKJS_BUNDLE).read_bytes()
+        for name in gate.EXPECTED_CAPTURE_INPUTS:
+            if name == gate.SNARKJS_BUNDLE:
+                data = real_bundle
+            elif name == gate.ARTIFACT_CHECKER:
+                data = b'// fixture artifact checker\n'
+            elif name.endswith('.circom'):
+                data = b'pragma circom 2.0.0;\n'
+            elif name.endswith('.wasm'):
+                data = b'\0asm\x01\0\0\0fixture'
+            elif name.endswith('.json'):
+                data = b'{}\n'
+            else:
+                data = b'fixture binary\n'
             path = self.root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
-        self.git('add', 'public/zk')
+        self.git('add', 'public', 'scripts')
         self.git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'source fixture')
 
     def commit(self):
@@ -210,7 +234,7 @@ class ProvenanceControls(unittest.TestCase):
         self.source_repo()
         sha, rows = gate.capture_source(self.root, self.root / 'copy')
         self.assertEqual(sha, self.git('rev-parse', 'HEAD').decode().strip())
-        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(rows), len(gate.EXPECTED_CAPTURE_INPUTS))
         for row in rows:
             blob = self.git('cat-file', 'blob', row['gitBlob'])
             self.assertEqual((self.root / 'copy' / row['path']).read_bytes(), blob)
@@ -227,11 +251,11 @@ class ProvenanceControls(unittest.TestCase):
         self.source_repo()
         sha = self.git('rev-parse', 'HEAD').decode().strip()
         recipe = self.root / 'recipe'; recipe.write_text('recipe')
-        gate.verify_unchanged(self.root, sha, recipe, gate.digest(recipe.read_bytes()))
+        gate.verify_unchanged(self.root, sha, [(recipe, gate.digest(recipe.read_bytes()))])
         (self.root / gate.CIRCUIT).write_text('new committed circuit')
         self.commit()
         with self.assertRaisesRegex(RuntimeError, 'Repository SHA changed'):
-            gate.verify_unchanged(self.root, sha, recipe, gate.digest(recipe.read_bytes()))
+            gate.verify_unchanged(self.root, sha, [(recipe, gate.digest(recipe.read_bytes()))])
 
     def test_changed_recipe_and_dirty_source_rejected(self):
         self.source_repo()
@@ -240,11 +264,11 @@ class ProvenanceControls(unittest.TestCase):
         expected = gate.digest(recipe.read_bytes())
         recipe.write_text('changed recipe')
         with self.assertRaisesRegex(RuntimeError, 'Recipe or circuit inputs changed'):
-            gate.verify_unchanged(self.root, sha, recipe, expected)
+            gate.verify_unchanged(self.root, sha, [(recipe, expected)])
         recipe.write_text('recipe')
         (self.root / gate.CIRCUIT).write_text('changed source')
         with self.assertRaisesRegex(RuntimeError, 'Recipe or circuit inputs changed'):
-            gate.verify_unchanged(self.root, sha, recipe, expected)
+            gate.verify_unchanged(self.root, sha, [(recipe, expected)])
 
     def test_wrong_source_sha_rejected(self):
         with patch.object(gate.subprocess, 'check_output', return_value=b'not-a-sha\n'), \

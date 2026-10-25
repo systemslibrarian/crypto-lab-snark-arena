@@ -132,6 +132,7 @@ body {
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 .resource-link:focus-visible,
 .card:focus-visible {
   outline: 3px solid var(--acc2);
@@ -565,6 +566,49 @@ button { font-family: var(--mono); font-size: 12px; padding: 10px 15px; border-r
 }
 @keyframes rp-spin { to { transform: rotate(360deg); } }
 
+/* ── Computation / constraint gap case study ── */
+.cw-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.cw-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--tx2);
+  font-size: 12px;
+}
+.cw-inputs select {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid var(--tx2);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--tx);
+  font: inherit;
+}
+.cw-inputs select:focus-visible,
+#cw-run:focus-visible,
+#cw-tamper:focus-visible { border-color: var(--tx2); }
+#cw-run,
+#cw-tamper { border-color: var(--tx2); }
+.cw-results { margin-top: 14px; }
+.cw-results > div { min-width: 0; }
+#constraint-gap .calc-line,
+#constraint-gap .mono-inline {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.cw-result-title {
+  color: var(--tx);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
 /* ── Back to top ── */
 .to-top {
   position: fixed;
@@ -592,6 +636,7 @@ button { font-family: var(--mono); font-size: 12px; padding: 10px 15px; border-r
   .toc-link { font-size: 10px; padding: 5px 8px; }
   .glossary { grid-template-columns: 1fr; }
   .forge-grid { grid-template-columns: 1fr 1fr; }
+  .cw-inputs { grid-template-columns: 1fr; }
   .cn-eval { white-space: normal; overflow-wrap: anywhere; }
 }
 

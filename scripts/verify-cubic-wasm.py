@@ -1,4 +1,4 @@
-"""Rebuild immutable circuit inputs twice and compare with the shipped Git blob."""
+"""Rebuild immutable circuits twice and bind the shipped XOR proving material."""
 import argparse
 import datetime
 import hashlib
@@ -20,8 +20,30 @@ CIRCOM_COMMIT = 'ad44e915a12bb047b05745c2884aad9cc8326bc6'
 ARCHIVE_SHA256 = 'a0dbdd151cee500dfea459c4ce7f4417ff06ae7ac81502e1db35a6843749d827'
 LOCK_SHA256 = 'eee7a607818fd0084d319f3098ed2babae00976bc23f6f48ace36377215b620d'
 RUST_COMMIT = '17067e9ac6d7ecb70e50f92c1944e545188d2359'
-CIRCUIT = 'public/zk/cubic.circom'
-SHIPPED = 'public/zk/cubic.wasm'
+CIRCUITS = (
+    dict(name='cubic', source='public/zk/cubic.circom', wasm='public/zk/cubic.wasm'),
+    dict(name='xor_weak', source='public/zk/xor_weak.circom', wasm='public/zk/xor_weak.wasm'),
+    dict(name='xor_repaired', source='public/zk/xor_repaired.circom', wasm='public/zk/xor_repaired.wasm'),
+)
+# Retained aliases keep the small control fixtures readable.
+CIRCUIT = CIRCUITS[0]['source']
+SHIPPED = CIRCUITS[0]['wasm']
+XOR_PTAU = 'public/zk/xor_phase2.ptau'
+SNARKJS_BUNDLE = 'public/vendor/snarkjs.min.js'
+SNARKJS_SHA256 = '3f61bbd9ac0a10173902eaef65b510fa4e9a2c057f759c7f18a6d0446b20fd06'
+ARTIFACT_CHECKER = 'scripts/check-zk-artifacts.mjs'
+EXPECTED_PUBLIC_INPUTS = {
+    SNARKJS_BUNDLE,
+    *(spec[key] for spec in CIRCUITS for key in ('source', 'wasm')),
+    'public/zk/cubic_final.zkey',
+    'public/zk/verification_key.json',
+    XOR_PTAU,
+    'public/zk/xor_weak_final.zkey',
+    'public/zk/xor_weak_verification_key.json',
+    'public/zk/xor_repaired_final.zkey',
+    'public/zk/xor_repaired_verification_key.json',
+}
+EXPECTED_CAPTURE_INPUTS = EXPECTED_PUBLIC_INPUTS | {ARTIFACT_CHECKER}
 
 
 def digest(data):
@@ -108,10 +130,12 @@ def capture_source(root, destination):
     sha = git('rev-parse', 'HEAD').decode().strip()
     if not re.fullmatch('[0-9a-f]{40}', sha):
         raise RuntimeError('Invalid source SHA')
-    if git('status', '--porcelain', '--untracked-files=all', '--', 'public/zk'):
+    if git('status', '--porcelain', '--untracked-files=all', '--',
+           'public/zk', SNARKJS_BUNDLE, ARTIFACT_CHECKER):
         raise RuntimeError('Uncommitted circuit inputs; commit reviewed inputs before reproduction')
     rows = []
-    for entry in git('ls-tree', '-r', '-z', sha, '--', 'public/zk').split(b'\0'):
+    for entry in git('ls-tree', '-r', '-z', sha, '--',
+                     'public/zk', SNARKJS_BUNDLE, ARTIFACT_CHECKER).split(b'\0'):
         if not entry:
             continue
         header, name = entry.split(b'\t', 1)
@@ -128,47 +152,59 @@ def capture_source(root, destination):
         target.write_bytes(data)
         rows.append(dict(path=name, gitBlob=blob, bytes=len(data), sha256=digest(data)))
     paths = {row['path'] for row in rows}
-    if not {CIRCUIT, SHIPPED} <= paths:
-        raise RuntimeError('Incomplete tracked circuit inputs')
-    # This recipe covers exactly the current self-contained circuit, not hidden includes.
-    if {name for name in paths if name.endswith('.circom')} != {CIRCUIT} or re.search(r'\binclude\s', (destination / CIRCUIT).read_text()):
-        raise RuntimeError('Unsupported additional circuit inputs; extend coverage before verification')
+    if paths != EXPECTED_CAPTURE_INPUTS:
+        raise RuntimeError('Incomplete or unsupported tracked circuit inputs; extend coverage before verification')
+    # These recipes cover exactly the three current self-contained circuits,
+    # not any hidden include graph.
+    for spec in CIRCUITS:
+        if re.search(r'\binclude\s', (destination / spec['source']).read_text()):
+            raise RuntimeError('Unsupported included circuit input; extend coverage before verification')
+    if digest((destination / SNARKJS_BUNDLE).read_bytes()) != SNARKJS_SHA256:
+        raise RuntimeError('Vendored snarkjs bundle hash mismatch')
     return sha, rows
 
 
-def compare_artifacts(first, second, shipped):
+def compare_artifacts(first, second, captured):
     rows = []
-    for name, header in [('cubic_js/cubic.wasm', b'\0asm\x01\0\0\0'), ('cubic.r1cs', b'r1cs\x01\0\0\0')]:
-        a, b = (first / name).read_bytes(), (second / name).read_bytes()
-        if len(a) <= 8 or len(b) <= 8:
-            raise RuntimeError('Empty or incomplete compiler artifact: ' + name)
-        if a[:8] != header or b[:8] != header:
-            raise RuntimeError('Malformed compiler artifact: ' + name)
-        if a != b:
-            raise RuntimeError('Independent clean circuit builds differ: ' + name)
-        row = dict(path=name, bytes=len(a), sha256=digest(a), repeatMatches=True)
-        if name.endswith('.wasm'):
-            expected = shipped.read_bytes()
-            row.update(shippedSha256=digest(expected), matchesShipped=a == expected)
-            if not row['matchesShipped']:
-                raise RuntimeError('Rebuilt WASM differs from captured shipped Git blob')
-        else:
-            row['historicalR1csComparison'] = 'not-available'
-        rows.append(row)
+    for spec in CIRCUITS:
+        generated = ((spec['name'] + '_js/' + spec['name'] + '.wasm', b'\0asm\x01\0\0\0'),
+                     (spec['name'] + '.r1cs', b'r1cs\x01\0\0\0'))
+        for name, header in generated:
+            a, b = (first / name).read_bytes(), (second / name).read_bytes()
+            if len(a) <= 8 or len(b) <= 8:
+                raise RuntimeError('Empty or incomplete compiler artifact: ' + name)
+            if a[:8] != header or b[:8] != header:
+                raise RuntimeError('Malformed compiler artifact: ' + name)
+            if a != b:
+                raise RuntimeError('Independent clean circuit builds differ: ' + name)
+            row = dict(circuit=spec['name'], path=name, bytes=len(a), sha256=digest(a), repeatMatches=True)
+            if name.endswith('.wasm'):
+                expected = (captured / spec['wasm']).read_bytes()
+                row.update(shippedPath=spec['wasm'], shippedSha256=digest(expected), matchesShipped=a == expected)
+                if not row['matchesShipped']:
+                    raise RuntimeError('Rebuilt WASM differs from captured shipped Git blob: ' + spec['name'])
+            else:
+                row['historicalR1csComparison'] = 'not-available'
+            rows.append(row)
     return rows
 
 
-def verify_unchanged(root, source_sha, recipe, recipe_hash):
+def verify_unchanged(root, source_sha, recipes):
     current = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD']).decode().strip()
     if current != source_sha:
         raise RuntimeError('Repository SHA changed during reproduction')
-    if digest(recipe.read_bytes()) != recipe_hash or subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain', '--untracked-files=all', '--', 'public/zk']):
+    recipe_changed = any(digest(path.read_bytes()) != expected for path, expected in recipes)
+    public_changed = subprocess.check_output(
+        ['git', '-C', str(root), 'status', '--porcelain', '--untracked-files=all', '--', 'public/zk', SNARKJS_BUNDLE]
+    )
+    if recipe_changed or public_changed:
         raise RuntimeError('Recipe or circuit inputs changed during reproduction')
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--receipt', type=pathlib.Path)
+    parser.add_argument('--compiler-output', type=pathlib.Path)
     args = parser.parse_args()
     output = ROOT / 'zkbuild'
     if output.is_symlink():
@@ -177,11 +213,17 @@ def main():
     receipt = args.receipt or output / 'cubic-provenance.json'
     if receipt.is_symlink():
         raise RuntimeError('Refusing a symlinked receipt')
-    recipe_hash = digest(pathlib.Path(__file__).read_bytes())
+    recipe = pathlib.Path(__file__)
+    artifact_checker = ROOT / ARTIFACT_CHECKER
+    recipes = [(recipe, digest(recipe.read_bytes())),
+               (artifact_checker, digest(artifact_checker.read_bytes()))]
     report = dict(startedAt=datetime.datetime.now(datetime.timezone.utc).isoformat(), state='incomplete',
                   sourceSha=None, originalCompiler=None, originalSetupInputs=None, commands=[],
-                  recipeSha256=recipe_hash, platform=dict(system=platform.system(), machine=platform.machine()),
-                  scope='Current immutable circuit reproduces shipped witness WASM. Setup keys, ceremony trust, vendored snarkjs source reproduction and constant-time behavior are not established.')
+                  recipeSha256=recipes[0][1], artifactCheckerSha256=recipes[1][1],
+                  platform=dict(system=platform.system(), machine=platform.machine()),
+                  scope=('Three immutable circuits reproduce their shipped witness WASM. The XOR PTAU, zkeys and '
+                         'verification keys are structurally bound and exercised with actual proofs. Ceremony trust, '
+                         'toxic-waste destruction, vendored snarkjs source reproduction and constant-time behavior are not established.'))
     def save():
         receipt.write_text(json.dumps(report, indent=2) + '\n')
     def run(command, cwd, env):
@@ -214,7 +256,9 @@ def main():
                     rustup = str(candidate)
             if not rustup:
                 raise RuntimeError('rustup is required; refusing an unrelated system compiler')
-            run([rustup, 'toolchain', 'install', '1.87.0', '--profile', 'minimal', '--no-self-update'], source, env)
+            installed = run([rustup, 'toolchain', 'list'], source, env)
+            if not any(line.split()[0].startswith('1.87.0-') for line in installed.splitlines()):
+                run([rustup, 'toolchain', 'install', '1.87.0', '--profile', 'minimal', '--no-self-update'], source, env)
             rustc = run([rustup, 'which', 'rustc', '--toolchain', '1.87.0'], source, env)
             cargo = run([rustup, 'which', 'cargo', '--toolchain', '1.87.0'], source, env)
             env['PATH'] = str(pathlib.Path(cargo).parent) + os.pathsep + env['PATH']
@@ -241,12 +285,29 @@ def main():
                 circuit = work / label
                 shutil.copytree(captured, circuit)
                 (circuit / 'build').mkdir()
-                run([str(binary), CIRCUIT, *report['compileFlags'], '-o', 'build'], circuit, env)
-            report['artifacts'] = compare_artifacts(work / 'first/build', work / 'second/build', captured / SHIPPED)
-            verify_unchanged(ROOT, report['sourceSha'], pathlib.Path(__file__), recipe_hash)
+                for spec in CIRCUITS:
+                    run([str(binary), spec['source'], *report['compileFlags'], '-o', 'build'], circuit, env)
+            report['artifacts'] = compare_artifacts(work / 'first/build', work / 'second/build', captured)
+            checks = run(['node', str(captured / ARTIFACT_CHECKER), '--captured', str(captured),
+                          '--r1cs-dir', str(work / 'first/build')], ROOT, env)
+            try:
+                report['xorProvingMaterial'] = json.loads(checks)
+            except json.JSONDecodeError as error:
+                raise RuntimeError('Artifact checker returned malformed evidence') from error
+            if report['xorProvingMaterial'].get('state') != 'bound-and-exercised':
+                raise RuntimeError('Artifact checker did not complete all proof controls')
+            verify_unchanged(ROOT, report['sourceSha'], recipes)
             if digest((source / 'Cargo.lock').read_bytes()) != LOCK_SHA256:
                 raise RuntimeError('Compiler dependency lock changed during build')
-            report['state'] = 'reproduced-shipped-wasm'
+            if args.compiler_output:
+                target = args.compiler_output if args.compiler_output.is_absolute() else ROOT / args.compiler_output
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if target.is_symlink():
+                    raise RuntimeError('Refusing a symlinked compiler output')
+                shutil.copy2(binary, target)
+                target.chmod(target.stat().st_mode | 0o100)
+                report['compilerOutput'] = dict(path=str(target), sha256=digest(target.read_bytes()))
+            report['state'] = 'reproduced-and-bound'
     except BaseException as error:
         report.update(state='failed', error=str(error))
         raise

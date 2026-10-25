@@ -335,6 +335,36 @@ test('real proof: setup trust stays unverified without inferring a leak from pub
   expect(banner).not.toContain('treat τ as known');
 });
 
+// ════════ PAPER-BOUNDED CASE STUDY — computation / constraint gap ════════
+
+test('constraint-gap lesson exposes its exact paper mapping, adaptation, and circuit repair', async ({ page }) => {
+  const exhibit = page.locator('#exhibit-constraint-gap');
+  const text = await exhibit.innerText();
+  expect(text).toContain('ePrint 2025/2120, revision 7 (11 April 2026)');
+  expect(text).toContain('§§2.1–2.3 and §3.2.3');
+  expect(text).toContain('does not implement CCC-Check');
+  expect(text).toContain('performance evaluation in §5');
+  expect(text).toContain('approximation limits');
+  expect(text).toContain('client-side validation check does not restrict a prover');
+  expect(text).toContain('single-party demo setup');
+  expect(text).toContain('not universal circuit correctness');
+
+  await expect(exhibit.locator('a[href="https://eprint.iacr.org/2025/2120"]')).toHaveCount(1);
+  const [weakSource, repairedSource] = await page.evaluate(async () => {
+    const paths = ['zk/xor_weak.circom', 'zk/xor_repaired.circom'];
+    return Promise.all(paths.map(async (path) => {
+      const response = await fetch(path);
+      if (!response.ok) throw new Error(`${path}: ${response.status}`);
+      return response.text();
+    }));
+  });
+  expect(weakSource).toContain('out <== a + b - 2 * a * b');
+  expect(weakSource).not.toContain('a * (a - 1) === 0');
+  expect(repairedSource).toContain('a * (a - 1) === 0');
+  expect(repairedSource).toContain('b * (b - 1) === 0');
+  expect(repairedSource).toContain('out <== a + b - 2 * a * b');
+});
+
 // ════════════ EXHIBIT 02 — ceremony visualizer ════════════
 
 async function runLegacyChain(page: Page): Promise<string> {
