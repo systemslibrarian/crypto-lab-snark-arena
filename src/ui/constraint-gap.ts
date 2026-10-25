@@ -234,7 +234,7 @@ export function initConstraintGap(): void {
       tamperOut.innerHTML = `
         <div class="calc-verdict ${verified ? 'pv-bad' : 'pv-ok'}">groth16.verify → ${verified}</div>
         <div class="calc-line">The public statement stayed fixed, but two serialized proof elements were swapped. ${verified ? '<strong>Unexpected acceptance:</strong> this security check failed.' : '<strong>Ordinary proof tampering was rejected.</strong>'}</div>
-        <div class="calc-line">That rejection is different from the weak relation’s phantom output: the unintended-witness proof above is unmodified and verifies because it satisfies the relation that was actually encoded.</div>`;
+        <div class="calc-line">That rejection is distinct from the weak relation’s phantom output: the unintended-witness proof above is unmodified and verifies because it satisfies the relation that was actually encoded.</div>`;
     } catch {
       if (requestVersion !== evidenceVersion) return;
       tamperOut.className = 'calc-box cb-bad';
