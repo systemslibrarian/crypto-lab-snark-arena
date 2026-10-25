@@ -30,8 +30,8 @@ for (const theme of ['dark'] as const) {
     // measured, not assumed. `nonTextSeen` is a single flat set with no theme
     // or width dimension, so the rule only holds where the drive reaches EVERY
     // baselined selector, and the other three each miss some:
-    //   - the five `.bp` primaries (`#ceremony-run`, `#forge-honest`,
-    //     `#forge-lie`, `#rp-prove`, `#rp-verify`, all recorded at 2.75:1) are
+    //   - the four baselined `.bp` primaries (`#forge-honest`, `#forge-lie`,
+    //     `#rp-prove`, `#rp-verify`, all recorded at 2.75:1) are
     //     accent-bordered and clear 3:1 against the light surfaces, so they are
     //     never findings in a light run;
     //   - `button#play-reset.bs` is measured at desktop in both themes but not

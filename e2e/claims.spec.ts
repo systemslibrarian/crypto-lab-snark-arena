@@ -489,6 +489,21 @@ test('powers-of-tau: randomized contributions still satisfy the same product ide
   await assertCeremonyArithmetic(page, calc);
 });
 
+test('powers-of-tau: deletion controls lock while running and edits retire old evidence', async ({ page }) => {
+  const boxes = page.locator('#ceremony-toggles input[type="checkbox"]');
+  await page.locator('#ceremony-run').click();
+  await expect(boxes.first()).toBeDisabled();
+  await expect(page.locator('#ceremony-calc')).toContainText('Combined secret', { timeout: 20_000 });
+  await expect(boxes.first()).toBeEnabled();
+
+  await boxes.first().check();
+  await expect(page.locator('#ceremony-calc')).toBeEmpty();
+  await expect(page.locator('#ceremony-verdict')).toBeEmpty();
+  await expect(page.locator('#ceremony-chain .cn-state')).toHaveText([
+    'waiting', 'waiting', 'waiting', 'waiting', 'waiting',
+  ]);
+});
+
 // ════════════ EXHIBIT 05 — KZG opening and forgery ════════════
 
 interface ForgeFacts { poly: number[]; z: number; yTrue: number; commit: number; tau: number; }
