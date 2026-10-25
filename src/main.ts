@@ -1,5 +1,6 @@
 import { initPlayground } from './ui/playground';
 import { initRealProof } from './ui/realproof';
+import { initConstraintGap } from './ui/constraint-gap';
 import { initCeremony } from './ui/ceremony';
 import { initKzg } from './ui/kzg';
 import { initQuiz } from './ui/quiz';
@@ -40,9 +41,9 @@ function showProofHexes() {
 // "✓ Verified (simulated verifier path, N ms)" with N = Math.random(). No proof
 // object existed in either panel, so nothing was verified and nothing was timed.
 // Both buttons are gone. The comparison figures those panels quote are now
-// labelled as published benchmark numbers, and the only verification affordance
-// on the page is the featured panel, which runs snarkjs against real artifacts
-// and prints whatever groth16.verify actually returned.
+// labelled as published benchmark numbers. The featured proof and constraint-
+// gap panels are the verification affordances: both run snarkjs against real
+// artifacts and print the result that groth16.verify actually returned.
 
 // The Groth16 ceremony animation in Exhibit 02. The safe/compromised outcome is
 // computed by runCeremony() from per-participant deletion draws, not asserted.
@@ -146,6 +147,7 @@ function init() {
   bindLegacyCeremony();
   initPlayground();
   initRealProof();
+  initConstraintGap();
   initCeremony();
   initKzg();
   initQuiz();

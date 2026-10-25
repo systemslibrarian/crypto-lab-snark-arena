@@ -22,8 +22,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Provenance positive and negative controls
         run: python3 -m unittest discover -s tests -p 'test_cubic_provenance.py' -v
-      - name: Reproduce shipped cubic witness WASM from pinned compiler source
-        run: python3 scripts/verify-cubic-wasm.py
+      - name: Reproduce shipped witness WASM and bind XOR proof material
+        run: python3 scripts/verify-cubic-wasm.py --compiler-output zkbuild/circom
       - name: Retain actual source and compiler evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -36,12 +36,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Exercise fresh XOR artifact regeneration
+        run: node scripts/build-xor-artifacts.mjs --circom zkbuild/circom --out zkbuild/xor-regeneration-smoke --circuit all
       - run: npm test --if-present
       - run: npm run build
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Accessibility gate (axe-core, WCAG A/AA)
         run: npm run test:a11y
+      - name: Focused repaired-relation mutation gate
+        run: npm run test:mutations
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5

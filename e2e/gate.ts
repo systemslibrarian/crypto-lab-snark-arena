@@ -129,6 +129,7 @@ export async function boot(page: Page, theme: 'dark' | 'light'): Promise<void> {
   await expect(page.locator('#play-witness')).not.toBeEmpty();
   await expect(page.locator('#ceremony-toggles .ptoggle')).toHaveCount(5);
   await expect(page.locator('#forge-facts')).not.toBeEmpty();
+  await expect(page.locator('#cw-contract')).toContainText('Intended computation: ACCEPT');
   await expect(page.locator('.quiz-q')).toHaveCount(5);
 
   await settle(page);
@@ -325,7 +326,8 @@ export async function scan(page: Page, label: string): Promise<void> {
  *
  * EVERY control on the page is reached, which the old gate did not manage:
  * `#play-x`, `#play-cheat`, `#play-reset`, `#rp-x`, `#rp-prove`, `#rp-verify`,
- * `#rp-tamper`, `#groth16-chain-run`, every `#ceremony-toggles` checkbox,
+ * `#rp-tamper`, both `#cw-a` / `#cw-b` selects, `#cw-run`, `#cw-tamper`,
+ * `#groth16-chain-run`, every `#ceremony-toggles` checkbox,
  * `#ceremony-run`, `#ceremony-randomize`, `#forge-honest`, `#forge-lie`, every
  * `.quiz-opt` across all five questions, the `.toc-link` chips and `#to-top`.
  *
@@ -393,6 +395,33 @@ export async function driveAllStates(page: Page, theme: string): Promise<void> {
   await expect(page.locator('#rp-out')).toHaveClass(/cb-bad/, { timeout: 300_000 });
   await expect(page.locator('#rp-out .pv-bad')).toBeVisible();
   await scan(page, `${theme} / real proof tampered and rejected`);
+
+  // ── Computation / constraint gap — two actual Groth16 relations ───────
+  // A binary assignment proves and verifies before and after the repair.
+  await page.locator('#cw-run').click();
+  await expect(page.locator('#cw-weak-out')).toHaveAttribute('data-result', 'weak-accepted-legitimate', { timeout: 300_000 });
+  await expect(page.locator('#cw-repaired-out')).toHaveAttribute('data-result', 'repaired-accepted-legitimate', { timeout: 300_000 });
+  await scan(page, `${theme} / constraint gap legitimate assignment`);
+
+  // Changing the public inputs retires both prior verdicts before another
+  // proof is available; scan that user-visible transition too.
+  await page.locator('#cw-a').selectOption('2');
+  await page.locator('#cw-b').selectOption('2');
+  await expect(page.locator('#cw-contract')).toContainText('Intended computation: REJECT');
+  await expect(page.locator('#cw-tamper')).toBeDisabled();
+  await scan(page, `${theme} / constraint gap evidence retired`);
+
+  // The unmodified weak proof verifies for (2,2,p-4); the repaired witness
+  // generator hits its in-circuit bit constraints and emits no proof.
+  await page.locator('#cw-run').click();
+  await expect(page.locator('#cw-weak-out')).toHaveAttribute('data-result', 'weak-accepted-phantom', { timeout: 300_000 });
+  await expect(page.locator('#cw-repaired-out')).toHaveAttribute('data-result', 'repaired-rejected-phantom', { timeout: 300_000 });
+  await scan(page, `${theme} / constraint gap phantom output rejected by repair`);
+
+  // Ordinary proof-body tampering is a separate failure mode and is rejected.
+  await page.locator('#cw-tamper').click();
+  await expect(page.locator('#cw-tamper-out')).toHaveAttribute('data-result', 'tampered-rejected', { timeout: 300_000 });
+  await scan(page, `${theme} / constraint gap proof tampering rejected`);
 
   // ── Exhibit 02 — ceremony chain animation ──────────────────────────────
   await page.locator('#groth16-chain-run').click();

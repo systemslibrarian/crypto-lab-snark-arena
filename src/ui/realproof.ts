@@ -4,11 +4,11 @@
 // local setup with unverified original ceremony provenance. Every file is static, served
 // from /zk/ — which is exactly why this works on GitHub Pages with no backend.
 
-const BASE = import.meta.env.BASE_URL; // e.g. "/crypto-lab-snark-arena/"
-const WASM = `${BASE}zk/cubic.wasm`;
-const ZKEY = `${BASE}zk/cubic_final.zkey`;
-const VKEY_URL = `${BASE}zk/verification_key.json`;
-const SNARKJS_URL = `${BASE}vendor/snarkjs.min.js`;
+import { artifactUrl, loadSnarkjs } from './snarkjs';
+
+const WASM = artifactUrl('cubic.wasm');
+const ZKEY = artifactUrl('cubic_final.zkey');
+const VKEY_URL = artifactUrl('verification_key.json');
 
 // Groth16 on BN254: A (G1, 2×32B) + B (G2, 4×32B) + C (G1, 2×32B) = 256 bytes
 // uncompressed; 128 bytes compressed. Constant regardless of circuit size.
@@ -33,24 +33,6 @@ interface ProofState { proof: any; publicSignals: string[]; }
 
 let vkey: any = null;
 let last: ProofState | null = null;
-let snarkjsPromise: Promise<any> | null = null;
-
-/** Lazily load the vendored snarkjs UMD bundle (sets window.snarkjs). */
-function loadSnarkjs(): Promise<any> {
-  const w = window as unknown as { snarkjs?: any };
-  if (w.snarkjs) return Promise.resolve(w.snarkjs);
-  if (snarkjsPromise) return snarkjsPromise;
-  snarkjsPromise = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = SNARKJS_URL;
-    s.async = true;
-    s.onload = () => (w.snarkjs ? resolve(w.snarkjs) : reject(new Error('snarkjs global missing')));
-    s.onerror = () => reject(new Error('failed to load snarkjs'));
-    document.head.appendChild(s);
-  });
-  return snarkjsPromise;
-}
-
 function setBusy(host: HTMLElement, msg: string): void {
   host.className = 'calc-box';
   host.innerHTML = `<div class="calc-line">${msg}<span class="rp-spinner" aria-hidden="true"></span></div>`;

@@ -151,6 +151,7 @@
     <nav class="toc" id="toc" aria-label="Exhibit navigation">
       <a href="#exhibit-1" class="toc-link">01 · What is a SNARK</a>
       <a href="#exhibit-realproof" class="toc-link toc-link-live">★ Real proof</a>
+      <a href="#exhibit-constraint-gap" class="toc-link toc-link-live">★ Constraint gap</a>
       <a href="#exhibit-2" class="toc-link">02 · Groth16</a>
       <a href="#exhibit-3" class="toc-link">03 · PLONK</a>
       <a href="#exhibit-4" class="toc-link">04 · Head-to-head</a>
@@ -168,6 +169,7 @@
           <a class="resource-link" href="https://systemslibrarian.github.io/crypto-lab-zk-proof-lab/" target="_blank" rel="noopener noreferrer">ZK Proof Lab Fundamentals</a>
           <a class="resource-link" href="https://eprint.iacr.org/2016/260" target="_blank" rel="noopener noreferrer">Groth16 Paper</a>
           <a class="resource-link" href="https://eprint.iacr.org/2019/953" target="_blank" rel="noopener noreferrer">PLONK Paper</a>
+          <a class="resource-link" href="https://eprint.iacr.org/2025/2120" target="_blank" rel="noopener noreferrer">Constraint Consistency Paper</a>
         </div>
       </section>
 
@@ -253,6 +255,64 @@
         </div>
         <div class="vl"><strong>Why this matters:</strong> the gap between "toy demo" and "production zk" is mostly artifact size and ceremony rigor, not architecture. The same three calls — compile, prove, verify — scale from this 3-constraint circuit to Zcash's millions.</div>
         <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Real client-side SNARKs need no server — only static artifacts. The proof above is <strong>256 bytes uncompressed</strong> — the serialization snarkjs emits, three BN254 group elements at 32 bytes per coordinate. Compressed to one coordinate plus a sign bit per element it is the <strong>128 bytes</strong> quoted in Exhibit 02. Same proof, two encodings. Either way it verifies in milliseconds no matter how large the circuit.</div>
+      </section>
+
+      <!-- ════════════════ CASE STUDY: COMPUTATION / CONSTRAINT GAP ════════════════ -->
+      <section class="exhibit" id="exhibit-constraint-gap" aria-labelledby="cw-title">
+        <div class="ex-row"><span class="ex-num ex-num-live">CASE STUDY</span><span class="badge badge-live">Real Groth16 · weak vs repaired relation</span></div>
+        <h2 class="ex-title" id="cw-title">A Valid Proof Can Prove the Wrong Application Claim</h2>
+        <p class="objective"><strong>You'll learn:</strong> why proof validity establishes the relation that was encoded, not the computation a developer meant to encode.</p>
+        <div class="prose">
+          <p>An application intends Boolean XOR, whose inputs must be bits. Its arithmetic formula <span class="mono-inline">out = a + b − 2ab</span> agrees with XOR on <span class="mono-inline">a,b ∈ {0,1}</span>, but a weak circuit that encodes only that equation accepts more. For <span class="mono-inline">a=b=2</span>, the intended computation rejects, while the weak BN254 relation has the unique field output <span class="mono-inline">−4 mod r</span>.</p>
+          <p>This is the circuit-logic-assumption example from Kolozyan et al., <a href="https://eprint.iacr.org/2025/2120" target="_blank" rel="noopener noreferrer"><em>Language-Agnostic Detection of Computation-Constraint Inconsistencies in ZKP Programs via Value Inference</em></a>, ePrint 2025/2120, revision 7 (11 April 2026), especially §§2.1–2.3 and §3.2.3. The paper calls this a <strong>phantom output</strong>: the constraints accept an output for an input on which the specified computation has no output.</p>
+          <p>This bounded lesson uses the paper's example with two tiny Circom circuits and actual Groth16 proving. It does <strong>not</strong> implement CCC-Check, reproduce the paper's performance evaluation in §5, or generalize its detection results; §§5 and 7 motivate analysis at larger scale and record approximation limits.</p>
+        </div>
+
+        <div class="panel" id="constraint-gap" role="region" aria-labelledby="cw-panel-h">
+          <h3 class="ph" id="cw-panel-h">Live: intended computation vs encoded relations</h3>
+          <div class="pb">
+            <p class="hint" id="cw-scope">Choose the explicit public inputs. The page first reports the application contract, then calls <span class="mono-inline">snarkjs.groth16.fullProve</span> and <span class="mono-inline">groth16.verify</span> against separate weak and repaired circuit artifacts. Start with a legitimate binary assignment, then select 2 and 2.</p>
+            <div class="cw-inputs" role="group" aria-label="XOR public inputs" aria-describedby="cw-scope">
+              <label for="cw-a">Public input <span class="mono-inline">a</span>
+                <select id="cw-a">
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2 (outside bit domain)</option>
+                </select>
+              </label>
+              <label for="cw-b">Public input <span class="mono-inline">b</span>
+                <select id="cw-b">
+                  <option value="0">0</option>
+                  <option value="1" selected>1</option>
+                  <option value="2">2 (outside bit domain)</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="cw-contract" class="play-verdict" role="status" aria-live="polite"></div>
+            <div class="controls">
+              <button class="bp" id="cw-run" type="button">Run both real relations</button>
+              <button class="bs" id="cw-tamper" type="button">Swap proof elements &amp; verify</button>
+            </div>
+
+            <div class="demo-grid cw-results">
+              <div>
+                <h4 class="cw-result-title">Weak relation: equation only</h4>
+                <p class="hint"><a href="zk/xor_weak.circom" target="_blank" rel="noopener noreferrer">Source</a>: <span class="mono-inline">out = a + b − 2ab</span>. No bit constraints.</p>
+                <div id="cw-weak-out" class="calc-box" aria-live="polite"></div>
+              </div>
+              <div>
+                <h4 class="cw-result-title">Repaired relation: equation + bitness</h4>
+                <p class="hint"><a href="zk/xor_repaired.circom" target="_blank" rel="noopener noreferrer">Source</a>: adds <span class="mono-inline">a(a−1)=0</span> and <span class="mono-inline">b(b−1)=0</span> inside the circuit.</p>
+                <div id="cw-repaired-out" class="calc-box" aria-live="polite"></div>
+              </div>
+            </div>
+            <div id="cw-tamper-out" class="calc-box" aria-live="polite"></div>
+            <div class="trust-banner trust-real"><strong>Actual backend, bounded claim:</strong> the two circuits have distinct witness-generator WASM, proving keys, and verification keys bound by the repository's artifact gate. Their single-party demo setup has no independently verified secret-destruction evidence and is not production trust material. The lesson establishes these concrete accept/reject outcomes, not universal circuit correctness.</div>
+          </div>
+        </div>
+        <div class="vl"><strong>Why this matters:</strong> a client-side validation check does not restrict a prover who calls the proving system directly. The missing condition must be enforced by the proof relation, followed by circuit-specific artifact regeneration.</div>
+        <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> The weak proof for (2, 2, −4) is genuine and unmodified. Groth16 correctly proves the wrong relation; adding binary constraints to that relation is what removes the unintended witness.</div>
       </section>
 
       <!-- ════════════════ EXHIBIT 02 ════════════════ -->
