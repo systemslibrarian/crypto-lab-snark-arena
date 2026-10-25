@@ -157,14 +157,36 @@ export function initConstraintGap(): void {
         const repairedVerified = await snarkjs.groth16.verify(repairedKey, repairedSignals, repaired.proof);
         if (requestVersion !== evidenceVersion) return;
 
-        const expectedAcceptance = intended !== null;
-        const correct = expectedAcceptance && repairedVerified === true;
-        repairedOut.className = `calc-box ${correct ? 'cb-ok' : 'cb-bad'}`;
-        repairedOut.dataset.result = correct ? 'repaired-accepted-legitimate' : 'repaired-unexpected-acceptance';
-        repairedOut.innerHTML = `
-          <div class="calc-verdict ${correct ? 'pv-ok' : 'pv-bad'}">groth16.verify → ${repairedVerified}</div>
-          <div class="calc-line">Actual public signals: <span class="mono-inline">[out, a, b] = [${repairedSignals.join(', ')}]</span>.</div>
-          <div class="calc-line">${correct ? '<strong>Legitimate assignment accepted.</strong> The repaired relation preserves valid binary XOR witnesses.' : '<strong>Unexpected result:</strong> the repaired backend produced a proof for a non-binary assignment. This is a failed security check, not a success.'}</div>`;
+        const legitimate = intended !== null;
+        if (legitimate && repairedVerified === true) {
+          repairedOut.className = 'calc-box cb-ok';
+          repairedOut.dataset.result = 'repaired-accepted-legitimate';
+          repairedOut.innerHTML = `
+            <div class="calc-verdict pv-ok">groth16.verify → true</div>
+            <div class="calc-line">Actual public signals: <span class="mono-inline">[out, a, b] = [${repairedSignals.join(', ')}]</span>.</div>
+            <div class="calc-line"><strong>Legitimate assignment accepted.</strong> The repaired relation preserves valid binary XOR witnesses.</div>`;
+        } else if (legitimate) {
+          repairedOut.className = 'calc-box cb-bad';
+          repairedOut.dataset.result = 'repaired-verifier-rejected-legitimate';
+          repairedOut.innerHTML = `
+            <div class="calc-verdict pv-bad">groth16.verify → false</div>
+            <div class="calc-line">Actual public signals: <span class="mono-inline">[out, a, b] = [${repairedSignals.join(', ')}]</span>.</div>
+            <div class="calc-line"><strong>No acceptance claim:</strong> the prover returned a proof object for a legitimate assignment, but the verifier rejected it. This is a failed backend-consistency check, not evidence that the repaired relation excludes valid XOR inputs.</div>`;
+        } else if (repairedVerified === true) {
+          repairedOut.className = 'calc-box cb-bad';
+          repairedOut.dataset.result = 'repaired-unexpected-acceptance';
+          repairedOut.innerHTML = `
+            <div class="calc-verdict pv-bad">groth16.verify → true</div>
+            <div class="calc-line">Actual public signals: <span class="mono-inline">[out, a, b] = [${repairedSignals.join(', ')}]</span>.</div>
+            <div class="calc-line"><strong>Unexpected acceptance:</strong> the repaired backend produced and verified a proof for a non-binary assignment. This is a failed security check, not a success.</div>`;
+        } else {
+          repairedOut.className = 'calc-box cb-bad';
+          repairedOut.dataset.result = 'repaired-unexpected-proof-rejected';
+          repairedOut.innerHTML = `
+            <div class="calc-verdict pv-bad">groth16.verify → false</div>
+            <div class="calc-line">Actual public signals: <span class="mono-inline">[out, a, b] = [${repairedSignals.join(', ')}]</span>.</div>
+            <div class="calc-line"><strong>Verifier rejection — no acceptance claim.</strong> The proof object was unexpected because repaired witness generation should reject this non-binary assignment before proving; this result indicates a backend or artifact inconsistency.</div>`;
+        }
       } catch (error) {
         if (requestVersion !== evidenceVersion) return;
         if (intended === null && expectedConstraintFailure(error)) {

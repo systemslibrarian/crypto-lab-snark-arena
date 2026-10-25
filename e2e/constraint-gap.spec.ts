@@ -26,6 +26,76 @@ test('actual Groth16 backends preserve a legitimate witness before and after rep
   await expect(repaired).toContainText('[out, a, b] = [1, 0, 1]');
 });
 
+test('a verifier rejection for a legitimate repaired witness makes no acceptance claim', async ({ page }) => {
+  await page.addInitScript(() => {
+    let verificationCalls = 0;
+    Object.defineProperty(window, 'snarkjs', {
+      configurable: true,
+      value: {
+        groth16: {
+          fullProve: async ({ a, b }: { a: string; b: string }) => ({
+            proof: { pi_a: ['1', '2', '1'], pi_b: [['1', '2'], ['3', '4'], ['1', '0']], pi_c: ['5', '6', '1'] },
+            publicSignals: [String(BigInt(a) ^ BigInt(b)), a, b],
+          }),
+          verify: async () => {
+            verificationCalls += 1;
+            return verificationCalls === 1;
+          },
+        },
+      },
+    });
+  });
+  await page.goto('.');
+  await runComparison(page);
+
+  await expect(page.locator('#cw-weak-out')).toHaveAttribute('data-result', 'weak-accepted-legitimate');
+  const repaired = page.locator('#cw-repaired-out');
+  await expect(repaired).toHaveAttribute('data-result', 'repaired-verifier-rejected-legitimate');
+  await expect(repaired).toContainText('groth16.verify → false');
+  await expect(repaired).toContainText('No acceptance claim');
+  await expect(repaired).toContainText('legitimate assignment');
+  await expect(repaired).not.toContainText('non-binary assignment');
+});
+
+test('a rejected non-binary repaired proof object is not labeled acceptance', async ({ page }) => {
+  await page.addInitScript(() => {
+    let verificationCalls = 0;
+    Object.defineProperty(window, 'snarkjs', {
+      configurable: true,
+      value: {
+        groth16: {
+          fullProve: async ({ a, b }: { a: string; b: string }) => {
+            const av = BigInt(a);
+            const bv = BigInt(b);
+            const r = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+            const out = ((av + bv - 2n * av * bv) % r + r) % r;
+            return {
+              proof: { pi_a: ['1', '2', '1'], pi_b: [['1', '2'], ['3', '4'], ['1', '0']], pi_c: ['5', '6', '1'] },
+              publicSignals: [String(out), a, b],
+            };
+          },
+          verify: async () => {
+            verificationCalls += 1;
+            return verificationCalls === 1;
+          },
+        },
+      },
+    });
+  });
+  await page.goto('.');
+  await page.locator('#cw-a').selectOption('2');
+  await page.locator('#cw-b').selectOption('2');
+  await runComparison(page);
+
+  await expect(page.locator('#cw-weak-out')).toHaveAttribute('data-result', 'weak-accepted-phantom');
+  const repaired = page.locator('#cw-repaired-out');
+  await expect(repaired).toHaveAttribute('data-result', 'repaired-unexpected-proof-rejected');
+  await expect(repaired).toContainText('groth16.verify → false');
+  await expect(repaired).toContainText('no acceptance claim');
+  await expect(repaired).toContainText('proof object was unexpected');
+  await expect(repaired).not.toContainText('Unexpected acceptance');
+});
+
 test('actual weak relation proves the explicit phantom output and repaired relation rejects it', async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto('.');
