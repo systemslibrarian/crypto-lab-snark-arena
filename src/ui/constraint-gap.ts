@@ -135,13 +135,14 @@ export function initConstraintGap(): void {
       lastWeak = { proof: weak.proof, publicSignals: weakSignals };
       const weakOutValue = xorPolynomial(a, b);
       const integerOut = a + b - 2n * a * b;
+      const integerOutText = integerOut < 0n ? `−${-integerOut}` : String(integerOut);
       const phantom = intended === null;
       weakOut.className = `calc-box ${phantom ? 'cb-bad' : 'cb-ok'}`;
       weakOut.dataset.result = phantom ? 'weak-accepted-phantom' : 'weak-accepted-legitimate';
       weakOut.innerHTML = `
         <div class="calc-verdict ${phantom ? 'pv-bad' : 'pv-ok'}">groth16.verify → true</div>
         <div class="calc-line">Actual public signals: <span class="mono-inline">[out, a, b] = [${weakSignals.join(', ')}]</span>.</div>
-        <div class="calc-line">The weak relation checks only <span class="mono-inline">out = a + b − 2ab</span>. For this run, the integer expression is <strong>${integerOut}</strong> and its BN254 scalar-field residue is <strong>${weakOutValue}</strong>.</div>
+        <div class="calc-line">The weak relation checks only <span class="mono-inline">out = a + b − 2ab</span>. For this run, the integer expression is <strong>${integerOutText}</strong> and its BN254 scalar-field residue is <strong>${weakOutValue}</strong>.</div>
         <div class="calc-line">${phantom ? '<strong>Accepted phantom output:</strong> the proof is genuine and unmodified, but the encoded relation omitted the binary-input condition.' : '<strong>Legitimate assignment:</strong> the intended binary computation and weak relation agree.'}</div>`;
       tamperButton.disabled = false;
 
