@@ -107,3 +107,7 @@ The constraint-gap example is a bounded adaptation of Kolozyan et al., [*Languag
 *Part of the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite.*
 
 *"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31*
+
+## Research review extension 31 October 2026
+
+R20261031-09: A hypothetical semantic-outcome exercise distinguishes wrong-result acceptance, honest valid-execution rejection, ineffective mutations and malformed-proof rejection. It does not generate new proofs or reproduce Arguzz. The existing real weak-XOR and repaired-relation controls remain intact.
