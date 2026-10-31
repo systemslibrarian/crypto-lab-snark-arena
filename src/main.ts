@@ -1,6 +1,7 @@
 import { initPlayground } from './ui/playground';
 import { initRealProof } from './ui/realproof';
 import { initConstraintGap } from './ui/constraint-gap';
+import { initSemanticOutcomes } from './ui/semantic-outcomes';
 import { initCeremony } from './ui/ceremony';
 import { initKzg } from './ui/kzg';
 import { initQuiz } from './ui/quiz';
@@ -148,6 +149,7 @@ function init() {
   initPlayground();
   initRealProof();
   initConstraintGap();
+  initSemanticOutcomes();
   initCeremony();
   initKzg();
   initQuiz();
