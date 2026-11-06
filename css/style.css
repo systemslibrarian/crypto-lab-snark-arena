@@ -645,3 +645,8 @@ button { font-family: var(--mono); font-size: 12px; padding: 10px 15px; border-r
   html { scroll-behavior: auto; }
   .rp-spinner { animation: none !important; border-top-color: var(--bord); }
 }
+
+#ceremony-audit { margin-top: 1.5rem; min-width: 0; }
+#ceremony-audit select { display: block; max-width: 100%; width: 100%; min-height: 44px; margin-block: .5rem 1rem; color: var(--tx); background: #172331; border: 1px solid #8d9bab; padding: .5rem; }
+
+#ceremony-audit p { margin-block: .8rem; line-height: 1.6; }

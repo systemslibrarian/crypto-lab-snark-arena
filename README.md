@@ -111,3 +111,7 @@ The constraint-gap example is a bounded adaptation of Kolozyan et al., [*Languag
 ## Research review extension 31 October 2026
 
 R20261031-09: A hypothetical semantic-outcome exercise distinguishes wrong-result acceptance, honest valid-execution rejection, ineffective mutations and malformed-proof rejection. It does not generate new proofs or reproduce Arguzz. The existing real weak-XOR and repaired-relation controls remain intact.
+
+### Ceremony evidence exercise
+
+The advanced ceremony panel checks final power-vector consistency, every retained update and its final endpoint, and inclusion of an exact retained contribution receipt. Cases cover a consistent replacement SRS, missing transcript, corrupted intermediate update and omitted contribution. It uses disclosed exponents in F_17, not pairings or proofs of knowledge, and cannot establish secrecy, receipt authenticity or erasure. A linear scan locates a bad toy link; no paper speedup or batching algorithm is implemented. [Baghery, Mertens and Sedaghat, ePrint 2023/1161](https://eprint.iacr.org/2023/1161), pp. 4–6 and §5, motivates the distinction; its updatable-SRS protocols are not transplanted into Groth16.

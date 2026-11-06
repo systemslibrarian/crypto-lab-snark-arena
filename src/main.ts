@@ -1,3 +1,4 @@
+import { initCeremonyAudit } from './ui/ceremony-audit';
 import { initPlayground } from './ui/playground';
 import { initRealProof } from './ui/realproof';
 import { initConstraintGap } from './ui/constraint-gap';
@@ -151,6 +152,7 @@ function init() {
   initConstraintGap();
   initSemanticOutcomes();
   initCeremony();
+  initCeremonyAudit();
   initKzg();
   initQuiz();
 }
