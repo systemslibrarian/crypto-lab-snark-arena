@@ -253,7 +253,7 @@
             <div class="trust-banner trust-real"><strong>Not simulated:</strong> <span class="mono-inline">snarkjs.groth16.fullProve</span> runs the real proving algorithm on the shipped WASM and proving key. <strong>Demo-only keys: unverified ceremony provenance.</strong> Published entropy alone establishes neither leaked toxic waste nor secret destruction. Verification of a test proof does not certify setup soundness. It runs single-threaded — GitHub Pages can't send the COOP/COEP headers that multi-threaded WASM needs — which is still plenty fast for a circuit this size.</div>
           </div>
         </div>
-        <div class="vl"><strong>Why this matters:</strong> the gap between "toy demo" and "production zk" is mostly artifact size and ceremony rigor, not architecture. The same three calls — compile, prove, verify — scale from this 3-constraint circuit to Zcash's millions.</div>
+        <div class="vl"><strong>Why this matters:</strong> the gap between "toy demo" and "production zk" is mostly artifact size and ceremony rigor, not architecture. The same three calls — compile, prove, verify — scale from this 3-constraint circuit to the 98,777 of Zcash's Sapling Spend circuit.</div>
         <div class="takeaway"><span class="takeaway-tag">Key takeaway</span> Real client-side SNARKs need no server — only static artifacts. The proof above is <strong>256 bytes uncompressed</strong> — the serialization snarkjs emits, three BN254 group elements at 32 bytes per coordinate. Compressed to one coordinate plus a sign bit per element it is the <strong>128 bytes</strong> quoted in Exhibit 02. Same proof, two encodings. Either way it verifies in milliseconds no matter how large the circuit.</div>
       </section>
 
@@ -405,7 +405,7 @@
               <div class="srs-card">Circuit B → same universal SRS</div>
               <div class="srs-card">Circuit C → same universal SRS</div>
             </div>
-            <p class="hint">SRS examples: 2¹⁴ constraints ≈ 256 MB, 2²¹ constraints ≈ 2 GB.</p>
+            <p class="hint">SRS size is linear in the constraint bound — one fixed group-element budget per supported constraint — so the examples scale with it: 2¹⁴ constraints ≈ <strong>19 MB</strong>, 2²¹ constraints ≈ <strong>2.4 GB</strong>. (Measured on snarkjs's published prepared Powers-of-Tau files, <span class="mono-inline">powersOfTau28_hez_final_14/21.ptau</span>: 18,957,464 and 2,416,002,200 bytes — a factor of 127, for a 2⁷ rise in the bound, at about 1.1 KB per constraint.)</p>
             <div class="vl" style="margin-top:10px"><strong>Contrast with Groth16:</strong> Groth16 requires a new phase-2 ceremony for every circuit. PLONK reuses the same universal SRS — write your circuit today, no ceremony needed.</div>
           </div>
         </div>
@@ -557,7 +557,7 @@
           <article class="card">
             <h3 class="card-title">A. Zcash Shielded Transactions (Groth16)</h3>
             <p class="card-desc">Every shielded transaction proves: "I know a spending key and note commitment that authorizes spending this amount" without revealing either.</p>
-            <p class="hint">Circuit: Sapling circuit, ~4 million constraints. Proof: 192 bytes (BLS12-381), generated in ~2–3 seconds on mobile. Verification: ~10 ms on a full node. Same circuit since 2018 Sapling upgrade.</p>
+            <p class="hint">Circuits: Sapling <strong>Spend, 98,777 constraints</strong>; Output, <strong>7,827</strong> — the counts Zcash's own circuit tests assert (<a href="https://github.com/zcash/sapling-crypto/blob/main/src/circuit.rs" target="_blank" rel="noopener noreferrer">zcash/sapling-crypto</a>, <span class="mono-inline">src/circuit.rs</span>). Proof: 192 bytes (BLS12-381), generated in ~2–3 seconds on mobile. Verification: ~10 ms on a full node. Same circuit since 2018 Sapling upgrade.</p>
           </article>
           <article class="card">
             <h3 class="card-title">B. Polygon zkEVM (PLONK/FFLONK) — wound down 2026</h3>

@@ -95,6 +95,20 @@ function numAfter(text: string, label: string | RegExp): number {
   return Number(hit![1]);
 }
 
+/** The first capture of `re`, read as an integer with thousands separators. */
+function grouped(text: string, re: RegExp): number {
+  const hit = re.exec(text);
+  expect(hit, `expected ${String(re)} in: ${text}`).not.toBeNull();
+  return Number(hit![1].replace(/,/g, ''));
+}
+
+/** The first capture of `re`, read as a decimal. */
+function decimal(text: string, re: RegExp): number {
+  const hit = re.exec(text);
+  expect(hit, `expected ${String(re)} in: ${text}`).not.toBeNull();
+  return Number(hit![1]);
+}
+
 async function setSlider(page: Page, selector: string, value: number): Promise<void> {
   await page.locator(selector).evaluate((el, v) => {
     const input = el as HTMLInputElement;
@@ -672,6 +686,55 @@ test('quoted proof sizes agree across Exhibits 02, 03, 04 and the comparison tab
   expect(plonk).toBeGreaterThanOrEqual(Number(range[1]));
   expect(plonk).toBeLessThanOrEqual(Number(range[2]));
   expect(ex4, 'neither system is post-quantum').toContain('No (pairing-based)');
+});
+
+test("the Sapling constraint counts are Zcash's own, and the two places quoting them agree", async ({ page }) => {
+  // Not re-derivable here: these are the counts zcash/sapling-crypto's circuit
+  // tests assert of the shipped circuits (src/circuit.rs, read 15 Nov 2026 --
+  // `assert_eq!(cs.num_constraints(), 98777)` in
+  // test_input_circuit_with_bls12_381 and `7827` in
+  // test_output_circuit_with_bls12_381). Pinned because this card used to say
+  // "~4 million", out by a factor of 40, and the real-proof panel used to send
+  // readers to "Zcash's millions".
+  const SPEND = 98_777;
+  const OUTPUT = 7_827;
+  expect(SPEND, 'a Sapling circuit is ~10^5 constraints, not ~10^6').toBeLessThan(1_000_000);
+
+  const ex6 = await page.locator('#exhibit-6').innerText();
+  expect(grouped(ex6, /Spend,\s*([\d,]+)\s*constraints/)).toBe(SPEND);
+  expect(grouped(ex6, /Output,\s*([\d,]+)/)).toBe(OUTPUT);
+
+  // The real-proof panel's "scales to Zcash" line must quote the same circuit,
+  // and must start from the cubic circuit this page actually proves.
+  const realproof = await page.locator('#exhibit-realproof').innerText();
+  expect(grouped(realproof, /scale from this ([\d,]+)-constraint circuit/)).toBe(3);
+  expect(grouped(realproof, /to the ([\d,]+) of Zcash's Sapling Spend circuit/)).toBe(SPEND);
+});
+
+test('the universal-SRS examples grow linearly with the constraint bound', async ({ page }) => {
+  // A universal SRS holds a fixed group-element budget per supported
+  // constraint, so its size is linear in the bound. The page's two examples
+  // used to read 256 MB at 2^14 and 2 GB at 2^21 -- only 8x apart for a 128x
+  // rise in the bound, so they could not both hold. Both are now the sizes of
+  // snarkjs's published prepared Powers-of-Tau files, and everything the prose
+  // concludes from them is re-derived here rather than trusted.
+  const ex3 = await page.locator('#exhibit-3').innerText();
+
+  const small = grouped(ex3, /([\d,]{9,}) and [\d,]{9,} bytes/);
+  const large = grouped(ex3, /[\d,]{9,} and ([\d,]{9,}) bytes/);
+
+  // 2^21 / 2^14 = 128; the published files come out 127.4x apart.
+  const ratio = large / small;
+  expect(ratio).toBeGreaterThan(120);
+  expect(ratio).toBeLessThan(132);
+  expect(grouped(ex3, /a factor of ([\d,]+)/)).toBe(Math.round(ratio));
+
+  // The human-readable figures must round from the bytes quoted beside them.
+  expect(decimal(ex3, /2\u00b9\u2074 constraints \u2248\s*([\d.]+)\s*MB/)).toBeCloseTo(small / 1e6, 0);
+  expect(decimal(ex3, /2\u00b2\u00b9 constraints \u2248\s*([\d.]+)\s*GB/)).toBeCloseTo(large / 1e9, 1);
+
+  // ...and so must the per-constraint rate the page names.
+  expect(decimal(ex3, /about ([\d.]+) KB per constraint/)).toBeCloseTo(small / 2 ** 14 / 1024, 1);
 });
 
 test('the simulated panels declare that they compute nothing, and carry no verify affordance', async ({ page }) => {
