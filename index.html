@@ -467,7 +467,7 @@
                 <tr><th scope="row">Trusted setup risk</th><td>Circuit-specific</td><td>Universal SRS</td></tr>
                 <tr><th scope="row">Recursive SNARKs</th><td>Complex</td><td>Native in Halo2 variants</td></tr>
                 <tr><th scope="row">Post-quantum safe</th><td>No (pairing-based)</td><td>No (pairing-based)</td></tr>
-                <tr><th scope="row">Used in</th><td>Zcash, Semaphore</td><td>Aztec, Polygon zkEVM</td></tr>
+                <tr><th scope="row">Used in</th><td>Zcash, Semaphore</td><td>Aztec; Polygon zkEVM (2023–2026, wound down)</td></tr>
               </tbody>
             </table>
           </div>
@@ -552,7 +552,7 @@
       <section class="exhibit" id="exhibit-6" aria-labelledby="ex6-title">
         <div class="ex-row"><span class="ex-num">EXHIBIT 06</span><span class="badge badge-real">Production Deployments</span></div>
         <h2 class="ex-title" id="ex6-title">SNARK Applications in Production</h2>
-        <p class="objective"><strong>You'll learn:</strong> where these proving systems run today, and what statement each one proves.</p>
+        <p class="objective"><strong>You'll learn:</strong> where these proving systems run today — one of them, Polygon zkEVM, has since been wound down — and what statement each one proves.</p>
         <div class="cards-4">
           <article class="card">
             <h3 class="card-title">A. Zcash Shielded Transactions (Groth16)</h3>
@@ -560,8 +560,8 @@
             <p class="hint">Circuit: Sapling circuit, ~4 million constraints. Proof: 192 bytes (BLS12-381), generated in ~2–3 seconds on mobile. Verification: ~10 ms on a full node. Same circuit since 2018 Sapling upgrade.</p>
           </article>
           <article class="card">
-            <h3 class="card-title">B. Polygon zkEVM (PLONK/FFLONK)</h3>
-            <p class="card-desc">Proves correct execution of Ethereum EVM bytecode. The proof allows Ethereum mainnet to verify L2 transactions without re-executing them — this is how zkRollups achieve scalability.</p>
+            <h3 class="card-title">B. Polygon zkEVM (PLONK/FFLONK) — wound down 2026</h3>
+            <p class="card-desc">Historical deployment. It proved correct execution of Ethereum EVM bytecode so that Ethereum mainnet could verify L2 transactions without re-executing them — this is how zkRollups achieve scalability. Mainnet beta launched 27 March 2023; Polygon announced on 11 June 2025 that it would be deprecated in 2026, and its sequencer was sunset on 3 July 2026 (<a href="https://forum.polygon.technology/t/sunsetting-polygon-zkevm-mainnet-beta-in-2026/21020" target="_blank" rel="noopener noreferrer">Polygon forum</a>, <a href="https://polygon.technology/polygon-zkevm" target="_blank" rel="noopener noreferrer">polygon.technology</a>).</p>
             <p class="hint">Circuit: millions of constraints for EVM opcode coverage. FFLONK (Fast PLONK variant): ~800 byte proofs, ~200 ms verification on-chain.</p>
           </article>
           <article class="card">

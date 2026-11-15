@@ -7,7 +7,7 @@ SNARK Arena demonstrates the two most deployed zk-SNARK proving systems: Groth16
 ## When to Use It
 
 - ✅ Groth16: fixed circuits requiring minimal proof size and fastest verification, such as Zcash and Semaphore-style deployments where proof bytes matter.
-- ✅ PLONK: circuits that evolve or where avoiding a new per-circuit ceremony is important, such as Aztec and Polygon zkEVM style workflows.
+- ✅ PLONK: circuits that evolve or where avoiding a new per-circuit ceremony is important, such as Aztec-style workflows and, until its 2026 wind-down, Polygon zkEVM.
 - ✅ Halo2 (PLONK variant): when recursive proof composition or no trusted setup is needed — but "no trusted setup" is a property of the IPA backend that upstream (Zcash) halo2 uses, not of halo2 as such. The PSE fork swaps IPA for KZG for cheaper L1 verification, and KZG needs a ceremony.
 - ❌ Neither Groth16 nor PLONK is post-quantum secure; use STARK systems for long-term quantum resistance targets.
 - ❌ A single-party setup requires trusting that one participant generated and destroyed the setup secrets correctly. A verified multi-party ceremony reduces that trust to at least one honest participant; these demo artifacts have no authenticated ceremony evidence.
@@ -32,10 +32,12 @@ Six numbered exhibits, a focused constraint-gap case study, a glossary, and a se
 ## Real-World Usage
 
 - **Zcash** — Groth16 proofs authorize shielded transactions without revealing sender, receiver, or amount.
-- **zkEVM rollups** — Polygon zkEVM and Aztec use PLONK-family systems to prove correct execution off-chain.
+- **zkEVM rollups** — Aztec uses PLONK-family systems to prove correct execution off-chain, as did Polygon zkEVM (mainnet beta launched 27 March 2023; Polygon announced on 11 June 2025 that it would be deprecated in 2026, and its sequencer was sunset on 3 July 2026).
 - **Identity / anti-Sybil** — WorldID and Semaphore use Groth16 proofs for private set membership and one-person-one-action guarantees.
 - **zkLogin** — proves a valid OAuth login without revealing identity, using a SNARK over the JWT.
 - **General zk-rollups** — succinct, constant-size proofs let a chain verify a whole batch of transactions in milliseconds.
+
+**Sources reviewed 15 November 2026:** Polygon zkEVM Mainnet Beta launched on 27 March 2023 ([Polygon blog](https://polygon.technology/blog/polygon-zkevm-mainnet-beta-is-live)). On 11 June 2025 Polygon announced it had "made the decision to deprecate Polygon zkEVM Mainnet Beta next year" ([Polygon forum](https://forum.polygon.technology/t/sunsetting-polygon-zkevm-mainnet-beta-in-2026/21020)), and Polygon's zkEVM page now states: "As of July 3, 2026, the Polygon zkEVM Mainnet Beta sequencer has been sunset" ([polygon.technology](https://polygon.technology/polygon-zkevm)). It is kept in this lab as a historical PLONK/FFLONK deployment.
 
 ## How to Run Locally
 
@@ -65,7 +67,7 @@ npm run build && npm run test:a11y   # production build + WCAG a11y gate
 3. **PLONK** with a universal SRS and circuit flexibility.
 4. **Head-to-head** comparison on the same circuit, with a decision tree.
 5. **The trusted-setup problem in depth** — a **live powers-of-tau ceremony** showing the combined secret `τ = τ₁·τ₂·…·τₙ` as a running product (toggle who deletes their toxic waste), and a **live KZG forgery demo** proving that an honest prover cannot open a commitment to a lie, while an attacker who keeps `τ` can.
-6. **Production deployments** in Zcash, Polygon zkEVM, WorldID/Semaphore, and zkLogin.
+6. **Production deployments** in Zcash, WorldID/Semaphore, and zkLogin, with Polygon zkEVM kept as a historical case (wound down in 2026).
 
 ## Real math, not mock-ups
 
