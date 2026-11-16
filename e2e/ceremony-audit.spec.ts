@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { auditControlNames, formatControlNameFailures } from './control-names';
 for (const width of [1280, 380]) test(`ceremony evidence stays distinct at ${width}px`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 }); await page.goto('.');
   const panel = page.locator('#ceremony-audit'), result = panel.locator('#audit-result');
@@ -10,5 +11,8 @@ for (const width of [1280, 380]) test(`ceremony evidence stays distinct at ${wid
     await expect(result).toContainText(`Your exact contribution included: ${inclusion}`);
   }
   expect((await new AxeBuilder({ page }).include('#ceremony-audit').analyze()).violations).toEqual([]);
+  // axe's `label` rule accepts a bare `placeholder` as an accessible name, so a
+  // deleted label can leave this gate green. See `control-names.ts`.
+  expect(formatControlNameFailures(await auditControlNames(page)), `form controls named only by placeholder/title at ${width}px`).toEqual([]);
   expect(await panel.evaluate(el => el.scrollWidth > el.clientWidth + 1)).toBe(false);
 });
