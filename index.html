@@ -236,6 +236,7 @@
           <p>The artifacts — the witness-generator WASM (34 KB), the proving key (3.6 KB), and the verification key — are <strong>static files shipped with the page</strong>. That is precisely why a real SNARK works on GitHub Pages with no backend: proving and verifying are pure client-side computation.</p>
         </div>
         <div class="panel" id="realproof" role="region" aria-labelledby="rp-panel-h">
+          <div id="bn254-security" class="trust-banner trust-conceptual"><strong>BN254 security is separate from proof size.</strong> BN254’s 254-bit field does not provide 128-bit security. The draft summarizes an estimate of approximately 100 bits after exTNFS, based on earlier cryptanalysis—not a new break in November 2026. This is an estimated attack cost, not a measured key recovery. The live Groth16 proof still verifies its stated relation; successful verification does not certify the curve’s security. Proof sizes remain 128 bytes compressed and 256 bytes uncompressed. Source: <a href="https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-16#section-1.3" target="_blank" rel="noopener noreferrer">CFRG Pairing-Friendly Curves, draft-16 §1.3 (16 November 2026)</a>, an active IRTF Internet-Draft, not a final standard.</div>
           <h3 class="ph" id="rp-panel-h">Live: Groth16 prove + verify (snarkjs / BN254)</h3>
           <div class="pb">
             <div class="play-control">

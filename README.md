@@ -1,5 +1,9 @@
 # crypto-lab-snark-arena
 
+## BN254 security note
+
+BN254’s 254-bit field does not provide 128-bit security. The draft summarizes an estimate of approximately 100 bits after exTNFS, based on earlier cryptanalysis—not a new break in November 2026. This is an estimated attack cost, not a measured key recovery. The live Groth16 proof still verifies its stated relation; successful verification does not certify the curve’s security. Proof sizes remain 128 bytes compressed and 256 bytes uncompressed. [CFRG Pairing-Friendly Curves, draft-16 §1.3](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-pairing-friendly-curves-16#section-1.3), dated 16 November 2026, is an active IRTF Internet-Draft, not a final standard. [See the note beside the live proof](https://systemslibrarian.github.io/crypto-lab-snark-arena/#bn254-security).
+
 ## What It Is
 
 SNARK Arena demonstrates the two most deployed zk-SNARK proving systems: Groth16 (Groth, EUROCRYPT 2016) and PLONK (Gabizon et al., 2019). Both are succinct non-interactive arguments of knowledge: under their security assumptions, they prove knowledge of a witness satisfying a circuit without disclosing additional information beyond the public statement, in small proofs. That statement can itself reveal the witness. Groth16 produces 128-byte proofs on BN254 with per-circuit trusted setup — that is the compressed encoding; the same three group elements are 256 bytes uncompressed, which is what snarkjs writes and what the live-proof panel reports. PLONK produces approximately 400-byte proofs with a universal trusted setup reusable across circuits. Both rely on pairing-based assumptions and are not post-quantum secure.
