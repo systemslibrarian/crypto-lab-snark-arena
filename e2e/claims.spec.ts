@@ -342,7 +342,7 @@ test('real proof: setup trust stays unverified without inferring a leak from pub
   expect(explanation).toContain('not production trust material');
   expect(explanation).not.toContain('toxic waste for these artifacts effectively public');
   expect(explanation).not.toContain('soundness of these particular keys is worth nothing');
-  const banner = await page.locator('#realproof .trust-banner').innerText();
+  const banner = await page.locator('#realproof .trust-banner.trust-real').innerText();
   expect(banner).toContain('unverified ceremony provenance');
   expect(banner).toContain('neither leaked toxic waste nor secret destruction');
   expect(banner).not.toContain('unsound by construction');
